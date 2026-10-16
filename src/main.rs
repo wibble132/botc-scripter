@@ -149,6 +149,7 @@ fn generate_role_paper(c: &ScriptCharacter) -> Option<String> {
 
     let name = c.name.mc().bold().underlined().color(colour).cmd();
     let mut lore = team_caps.mc().color("white").underlined();
+    lore.push("".mc());
     for l in ability_lines {
         lore.push(l.mc().color("gray"))
     }
