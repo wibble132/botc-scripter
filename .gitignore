@@ -1,5 +1,12 @@
+
+# Build results
 /target
 /result
-.direnv
-.gitignore
 
+# Working folders
+.direnv
+.idea
+
+# Output folders
+roles
+script
