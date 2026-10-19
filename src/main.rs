@@ -58,12 +58,12 @@ fn generate_script_book(script_color: &str, script: &Script) -> String {
         "ROLE CHEAT SHEET".mc().bold(),
         "\n\n\n\n* next to ability means Not the First Night.".mc(),
     ]
-    .into();
+    .mc();
 
     let mut pages = Vec::with_capacity(script.characters.len() + 1);
     pages.push(cover_page);
     for c in &script.characters {
-        pages.push(generate_character_page(c))
+        pages.push(generate_character_page(c));
     }
     let pages_str = pages
         .iter()
@@ -84,9 +84,9 @@ fn generate_script_book(script_color: &str, script: &Script) -> String {
             script_name.mc().color(script_color),
             " script.".mc().color("gray"),
         ]
-        .into(),
+        .mc(),
     ]
-    .into();
+    .mc();
     let lore = lore.cmd();
 
     format!(
@@ -95,19 +95,19 @@ fn generate_script_book(script_color: &str, script: &Script) -> String {
 }
 
 fn generate_character_page(c: &ScriptCharacter) -> MinecraftText {
-    let color = team_colour(&c.team, false);
+    let color = team_colour(c.team, false);
     vec![
         "".mc(),
         "      ".mc(),
-        team_text(&c.team).mc().bold().color(color),
+        team_text(c.team).mc().bold().color(color),
         "\n\n".mc(),
         c.name.mc().color(color).underlined(),
         ":\n".mc().color(color),
         c.ability.mc(),
     ]
-    .into()
+    .mc()
 }
-fn team_colour(team: &CharacterTeam, light: bool) -> &'static str {
+fn team_colour(team: CharacterTeam, light: bool) -> &'static str {
     match team {
         CharacterTeam::townsfolk | CharacterTeam::outsider if light => "aqua",
         CharacterTeam::townsfolk | CharacterTeam::outsider => "dark_blue",
@@ -117,7 +117,7 @@ fn team_colour(team: &CharacterTeam, light: bool) -> &'static str {
         CharacterTeam::loric => "dark_green",
     }
 }
-fn team_text(team: &CharacterTeam) -> &'static str {
+fn team_text(team: CharacterTeam) -> &'static str {
     match team {
         CharacterTeam::townsfolk => "TOWNSFOLK",
         CharacterTeam::outsider => "OUTSIDER",
@@ -141,8 +141,8 @@ fn generate_role_papers(script: &Script) -> String {
 fn generate_role_paper(c: &ScriptCharacter) -> Option<String> {
     let (item_type, components) = item_type(c)?;
 
-    let colour = team_colour(&c.team, true);
-    let team_caps = team_text(&c.team).to_ascii_uppercase();
+    let colour = team_colour(c.team, true);
+    let team_caps = team_text(c.team).to_ascii_uppercase();
 
     // Wrap text in ability to 36 chars
     let ability_lines = wrap_text(&c.ability, 36);
@@ -151,7 +151,7 @@ fn generate_role_paper(c: &ScriptCharacter) -> Option<String> {
     let mut lore = team_caps.mc().color("white").underlined();
     lore.push("".mc());
     for l in ability_lines {
-        lore.push(l.mc().color("gray"))
+        lore.push(l.mc().color("gray"));
     }
     let lore = lore.cmd();
 

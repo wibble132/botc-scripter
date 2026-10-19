@@ -1,6 +1,4 @@
 {
-  description = "A devShell example";
-
   inputs = {
     nixpkgs.url      = "github:NixOS/nixpkgs/nixos-unstable";
     flake-utils.url  = "github:numtide/flake-utils";
@@ -29,6 +27,8 @@
           buildInputs = [
             rust
           ];
+
+          RUST_SRC_PATH=
         };
       }
     );

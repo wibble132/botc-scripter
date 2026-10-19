@@ -1,3 +1,4 @@
+use std::fmt::Write;
 use std::mem;
 
 #[derive(Clone)]
@@ -20,21 +21,18 @@ impl MinecraftText {
             MinecraftText::Rich(r) => {
                 let mut out = String::new();
                 out += "{";
-                out += &format!("text:{}", Self::escape_string(&r.text));
+                _ = write!(out, "text:{}", Self::escape_string(&r.text));
 
-                let mut write_conditional = |s, b: bool| {
-                    if b {
-                        out += &format!(",{s}:true");
-                    }
-                };
-
-                write_conditional("bold", r.bold);
-                // write_conditional("italic", true); /* Sometimes need `italic:false` for item names */
-                write_conditional("underlined", r.underlined);
-                out += &format!(",italic:{}", r.italic);
+                if r.bold {
+                    out += ",bold:true";
+                }
+                _ = write!(out, ",italic:{}", r.italic);
+                if r.underlined {
+                    out += ",underlined:true";
+                }
 
                 if let Some(c) = &r.color {
-                    out += &format!(",color:{c}");
+                    _ = write!(out, ",color:{c}");
                 }
                 out += "}";
                 out
@@ -49,7 +47,7 @@ impl MinecraftText {
         if let MinecraftText::Array(vec) = self {
             vec.push(text);
             return;
-        };
+        }
 
         // Replace self with an array, first with old self then the new item
         let array = MinecraftText::Array(vec![]);
@@ -84,7 +82,7 @@ impl MinecraftText {
                     ..RichText::default()
                 };
                 f(&mut rich);
-                self = MinecraftText::Rich(rich)
+                self = MinecraftText::Rich(rich);
             }
             MinecraftText::Array(_) => panic!("Not supported"),
             MinecraftText::Rich(r) => f(r),
@@ -118,6 +116,11 @@ impl ToMcText for &'_ str {
         self.into()
     }
 }
+impl ToMcText for Vec<MinecraftText> {
+    fn mc(self) -> MinecraftText {
+        self.into()
+    }
+}
 
 #[derive(Default, Clone)]
 pub struct RichText {
@@ -136,7 +139,7 @@ mod test {
     fn simple_text() {
         let text: MinecraftText = "wibble".into();
         let result = text.cmd();
-        assert_eq!(result, r#""wibble""#)
+        assert_eq!(result, r#""wibble""#);
     }
     #[test]
     fn array_text() {
@@ -146,6 +149,6 @@ mod test {
             .to_vec()
             .into();
         let result = text.cmd();
-        assert_eq!(result, r#"["wibble",", ","wobble"]"#)
+        assert_eq!(result, r#"["wibble",", ","wobble"]"#);
     }
 }

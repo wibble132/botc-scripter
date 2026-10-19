@@ -45,8 +45,8 @@ static ROLES: LazyLock<HashMap<String, ScriptCharacter>> = LazyLock::new(|| {
             .map(|js| js.jinx.clone())
             .unwrap_or_default();
 
-        role.firstNight = first_night as u32;
-        role.otherNight = other_nights as u32;
+        role.firstNight = first_night.try_into().unwrap_or(u32::MAX);
+        role.otherNight = other_nights.try_into().unwrap_or(u32::MAX);
         role.jinxes = jinxes;
 
         roles_map.insert(role.id.clone(), role);

@@ -254,11 +254,11 @@ mod test {
             .to_vec();
 
         let expected = Script {
-            meta: Default::default(),
+            meta: Meta::default(),
             characters,
         };
 
-        assert_eq!(data, expected)
+        assert_eq!(data, expected);
     }
     #[test]
     fn meta() {
@@ -274,14 +274,14 @@ mod test {
             meta: Meta {
                 id: MetaID::_Meta,
                 name: "cool_script".to_string(),
-                author: "".to_string(),
-                logo: "".to_string(),
+                author: String::new(),
+                logo: String::new(),
                 hide_title: false,
             },
             characters: vec![],
         };
 
-        assert_eq!(data, expected)
+        assert_eq!(data, expected);
     }
 
     #[test]
@@ -336,6 +336,6 @@ mod test {
             meta: Meta::default(),
         };
 
-        assert_eq!(data, expected)
+        assert_eq!(data, expected);
     }
 }
