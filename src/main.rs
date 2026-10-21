@@ -4,7 +4,7 @@ mod minecraft_text;
 mod script;
 
 use crate::args::Args;
-use crate::minecraft_text::{MinecraftText, ToMcText};
+use crate::minecraft_text::{MinecraftText, TextColour, ToMcText};
 use crate::script::{CharacterTeam, Script, ScriptCharacter};
 use clap::Parser;
 use std::io::Write;
@@ -26,10 +26,13 @@ fn main() {
         }
     };
 
-    // dbg!(&script);
+    let Some(script_colour) = TextColour::try_parse(&args.color) else {
+        eprintln!("Failed to parse colour from \"{}\"", args.color);
+        exit(1);
+    };
 
-    let script_book = generate_script_book(&args.color, &script);
-    // dbg!(&script_book);
+    let script_book = generate_script_book(script_colour, &script);
+
     if let Err(e) = args.output_script_file().write_all(script_book.as_bytes()) {
         eprintln!("Error while writing script command: {e}");
         exit(1);
@@ -44,7 +47,7 @@ fn main() {
     println!("Finished successfully!");
 }
 
-fn generate_script_book(script_color: &str, script: &Script) -> String {
+fn generate_script_book(script_color: TextColour, script: &Script) -> String {
     let script_name = &script.meta.name;
     let cover_page: MinecraftText = vec![
         "".mc(),
@@ -79,10 +82,10 @@ fn generate_script_book(script_color: &str, script: &Script) -> String {
         .cmd();
 
     let lore: MinecraftText = vec![
-        "Useful role cheat sheet for ".mc().color("gray"),
+        "Useful role cheat sheet for ".mc().color(TextColour::Gray),
         vec![
             script_name.mc().color(script_color),
-            " script.".mc().color("gray"),
+            " script.".mc().color(TextColour::Gray),
         ]
         .mc(),
     ]
@@ -107,14 +110,16 @@ fn generate_character_page(c: &ScriptCharacter) -> MinecraftText {
     ]
     .mc()
 }
-fn team_colour(team: CharacterTeam, light: bool) -> &'static str {
+fn team_colour(team: CharacterTeam, light: bool) -> TextColour {
+    use TextColour::{Aqua, DarkBlue, DarkRed, Gray, Gold, DarkGreen};
+
     match team {
-        CharacterTeam::townsfolk | CharacterTeam::outsider if light => "aqua",
-        CharacterTeam::townsfolk | CharacterTeam::outsider => "dark_blue",
-        CharacterTeam::minion | CharacterTeam::demon => "dark_red",
-        CharacterTeam::traveller => "gray",
-        CharacterTeam::fabled => "gold",
-        CharacterTeam::loric => "dark_green",
+        CharacterTeam::townsfolk | CharacterTeam::outsider if light => Aqua,
+        CharacterTeam::townsfolk | CharacterTeam::outsider => DarkBlue,
+        CharacterTeam::minion | CharacterTeam::demon => DarkRed,
+        CharacterTeam::traveller => Gray,
+        CharacterTeam::fabled => Gold,
+        CharacterTeam::loric => DarkGreen,
     }
 }
 fn team_text(team: CharacterTeam) -> &'static str {
@@ -139,6 +144,8 @@ fn generate_role_papers(script: &Script) -> String {
 }
 
 fn generate_role_paper(c: &ScriptCharacter) -> Option<String> {
+    use TextColour::{White, Gray};
+
     let (item_type, components) = item_type(c)?;
 
     let colour = team_colour(c.team, true);
@@ -148,10 +155,10 @@ fn generate_role_paper(c: &ScriptCharacter) -> Option<String> {
     let ability_lines = wrap_text(&c.ability, 36);
 
     let name = c.name.mc().bold().underlined().color(colour).cmd();
-    let mut lore = team_caps.mc().color("white").underlined();
+    let mut lore = team_caps.mc().color(White).underlined();
     lore.push("".mc());
     for l in ability_lines {
-        lore.push(l.mc().color("gray"));
+        lore.push(l.mc().color(Gray));
     }
     let lore = lore.cmd();
 

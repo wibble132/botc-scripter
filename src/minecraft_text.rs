@@ -1,13 +1,18 @@
+//! Structures for building Minecraft Text Components. Only supports the
+//!
+//! See <https://minecraft.wiki/w/Text_component_format#Java_Edition> for more information
+
 use std::fmt::Write;
 use std::mem;
 
 #[derive(Clone)]
 pub enum MinecraftText {
+    // Written as quoted text, "A" is equivalent to "{text: A}"
     String(String),
+    // Written as an array. [A, B, C] is equivalent to {..A, extra: A.extra + [B,C]}
     Array(Vec<MinecraftText>),
     Rich(RichText),
 }
-
 
 impl MinecraftText {
     pub fn cmd(&self) -> String {
@@ -32,7 +37,7 @@ impl MinecraftText {
                 }
 
                 if let Some(c) = &r.color {
-                    _ = write!(out, ",color:{c}");
+                    _ = write!(out, ",color:{}", c.cmd());
                 }
                 out += "}";
                 out
@@ -67,8 +72,8 @@ impl MinecraftText {
     pub fn underlined(self) -> Self {
         self.richen(|r| r.underlined = true)
     }
-    pub fn color(self, color: &str) -> Self {
-        self.richen(|r| r.color = Some(color.to_string()))
+    pub fn color(self, color: TextColour) -> Self {
+        self.richen(|r| r.color = Some(color))
     }
     fn richen<Fn>(mut self, f: Fn) -> Self
     where
@@ -128,7 +133,98 @@ pub struct RichText {
     bold: bool,
     italic: bool,
     underlined: bool,
-    color: Option<String>,
+    color: Option<TextColour>,
+}
+
+#[derive(Copy, Clone)]
+pub enum TextColour {
+    Rgb { red: u8, green: u8, blue: u8 },
+    Black,
+    DarkBlue,
+    DarkGreen,
+    DarkAqua,
+    DarkRed,
+    DarkPurple,
+    Gold,
+    Gray,
+    DarkGray,
+    Blue,
+    Green,
+    Aqua,
+    Red,
+    LightPurple,
+    Yellow,
+    White,
+}
+
+impl TextColour {
+    pub fn try_parse(s: &str) -> Option<Self> {
+        let res = match s.to_ascii_lowercase().as_str() {
+            "black" => TextColour::Black,
+            "dark_blue" => TextColour::DarkBlue,
+            "dark_green" => TextColour::DarkGreen,
+            "dark_aqua" => TextColour::DarkAqua,
+            "dark_red" => TextColour::DarkRed,
+            "dark_purple" => TextColour::DarkPurple,
+            "gold" => TextColour::Gold,
+            "gray" => TextColour::Gray,
+            "dark_gray" => TextColour::DarkGray,
+            "blue" => TextColour::Blue,
+            "green" => TextColour::Green,
+            "aqua" => TextColour::Aqua,
+            "red" => TextColour::Red,
+            "light_purple" => TextColour::LightPurple,
+            "yellow" => TextColour::Yellow,
+            "white" => TextColour::White,
+            mut s => {
+                if s.starts_with('#') {
+                    s = &s[1..];
+                }
+
+                if s.len() != 6 {
+                    return None;
+                }
+
+                let chars = s.chars().collect::<Vec<_>>();
+
+                let &[r, g, b] = chars.chunks(2).collect::<Vec<_>>().as_slice() else {
+                    // Shouldn't happen, since we are of length 6, and are collecting 3 chunks of length 2
+                    return None;
+                };
+
+                let [Ok(red), Ok(green), Ok(blue)] = [r, g, b]
+                    .map(|x| u8::from_str_radix(x.iter().collect::<String>().as_str(), 16))
+                else {
+                    // Failed to parse one of the numbers from hex
+                    return None;
+                };
+
+                TextColour::Rgb { red, green, blue }
+            }
+        };
+        Some(res)
+    }
+    pub fn cmd(self) -> String {
+        match self {
+            TextColour::Rgb { red, green, blue } => format!("#{red:X}{green:X}{blue:X}"),
+            TextColour::Black => "black".to_string(),
+            TextColour::DarkBlue => "dark_blue".to_string(),
+            TextColour::DarkGreen => "dark_green".to_string(),
+            TextColour::DarkAqua => "dark_aqua".to_string(),
+            TextColour::DarkRed => "dark_red".to_string(),
+            TextColour::DarkPurple => "dark_purple".to_string(),
+            TextColour::Gold => "gold".to_string(),
+            TextColour::Gray => "gray".to_string(),
+            TextColour::DarkGray => "dark_gray".to_string(),
+            TextColour::Blue => "blue".to_string(),
+            TextColour::Green => "green".to_string(),
+            TextColour::Aqua => "aqua".to_string(),
+            TextColour::Red => "red".to_string(),
+            TextColour::LightPurple => "light_purple".to_string(),
+            TextColour::Yellow => "yellow".to_string(),
+            TextColour::White => "white".to_string(),
+        }
+    }
 }
 
 #[cfg(test)]
@@ -150,5 +246,77 @@ mod test {
             .into();
         let result = text.cmd();
         assert_eq!(result, r#"["wibble",", ","wobble"]"#);
+    }
+    #[test]
+    fn underline_written_only_when_true() {
+        for underlined in [false, true] {
+            let text = MinecraftText::Rich(RichText {
+                underlined,
+                ..RichText::default()
+            });
+            let result = text.cmd();
+            assert_eq!(result.contains("underlined"), underlined);
+        }
+    }
+    #[test]
+    fn bold_written_only_when_true() {
+        for bold in [false, true] {
+            let text = MinecraftText::Rich(RichText {
+                bold,
+                ..RichText::default()
+            });
+            let result = text.cmd();
+            assert_eq!(result.contains("bold"), bold);
+        }
+    }
+    #[test]
+    fn italic_written() {
+        for italic in [false, true] {
+            let text = MinecraftText::Rich(RichText {
+                italic,
+                ..RichText::default()
+            });
+            let result = text.cmd();
+            let expected = format!("italic:{italic}");
+            assert!(result.contains(&expected));
+        }
+    }
+    #[test]
+    fn colour_none_not_written() {
+        let text = MinecraftText::Rich(RichText {
+            color: None,
+            ..RichText::default()
+        });
+        let result = text.cmd();
+        assert!(!result.contains("color"));
+    }
+    #[test]
+    fn colour_name_written() {
+        use TextColour::*;
+        for colour in [
+            Black,
+            DarkBlue,
+            DarkGreen,
+            DarkAqua,
+            DarkRed,
+            DarkPurple,
+            Gold,
+            Gray,
+            DarkGray,
+            Blue,
+            Green,
+            Aqua,
+            Red,
+            LightPurple,
+            Yellow,
+            White,
+        ] {
+            let text = MinecraftText::Rich(RichText {
+                color: Some(colour),
+                ..RichText::default()
+            });
+            let result = text.cmd();
+            assert!(result.contains("color:"))
+        }
     }
 }

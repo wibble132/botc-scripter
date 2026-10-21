@@ -27,8 +27,6 @@
           buildInputs = [
             rust
           ];
-
-          RUST_SRC_PATH=
         };
       }
     );
