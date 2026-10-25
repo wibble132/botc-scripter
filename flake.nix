@@ -27,6 +27,11 @@
           buildInputs = [
             rust
           ];
+
+          RUST_SRC_PATH = "${rust}/lib/rustlib/src/rust/library";
+          shellHook = ''
+            ln -sfn ${rust} .toolchain
+          '';
         };
       }
     );

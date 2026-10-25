@@ -1,6 +1,6 @@
 use std::fs;
 use std::fs::File;
-use std::io::{stdin, BufRead, BufReader};
+use std::io::{BufRead, BufReader, stdin};
 use std::path::PathBuf;
 use std::process::exit;
 
@@ -11,6 +11,9 @@ pub struct Args {
 
     /// The Minecraft colour name for the script
     pub color: String,
+
+    /// The version of the script, e.g. "1.0.0", "3.2.1"
+    pub version: String,
 
     /// The input json script file. Defaults to stdin.
     #[arg(alias = "in", short, long)]

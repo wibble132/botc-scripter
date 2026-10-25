@@ -6,7 +6,9 @@
 # Working folders
 .direnv
 .idea
+.toolchain
 
 # Output folders
 roles
 script
+out

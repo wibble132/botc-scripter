@@ -225,6 +225,24 @@ impl TextColour {
             TextColour::White => "white".to_string(),
         }
     }
+    pub const ALL_CONSTANTS: [Self; 16] = [
+        TextColour::Black,
+        TextColour::DarkBlue,
+        TextColour::DarkGreen,
+        TextColour::DarkAqua,
+        TextColour::DarkRed,
+        TextColour::DarkPurple,
+        TextColour::Gold,
+        TextColour::Gray,
+        TextColour::DarkGray,
+        TextColour::Blue,
+        TextColour::Green,
+        TextColour::Aqua,
+        TextColour::Red,
+        TextColour::LightPurple,
+        TextColour::Yellow,
+        TextColour::White,
+    ];
 }
 
 #[cfg(test)]

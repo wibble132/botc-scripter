@@ -5,7 +5,7 @@ mod script;
 
 use crate::args::Args;
 use crate::minecraft_text::{MinecraftText, TextColour, ToMcText};
-use crate::script::{CharacterTeam, Script, ScriptCharacter};
+use crate::script::{CharacterJinx, CharacterTeam, Script, ScriptCharacter};
 use clap::Parser;
 use std::io::Write;
 use std::process::exit;
@@ -27,11 +27,20 @@ fn main() {
     };
 
     let Some(script_colour) = TextColour::try_parse(&args.color) else {
-        eprintln!("Failed to parse colour from \"{}\"", args.color);
+        eprintln!("Failed to parse colour from \"{}\".", args.color);
+        let all_colour_names = TextColour::ALL_CONSTANTS.map(TextColour::cmd);
+        eprintln!(
+            "Supported colours are: {}, or hex codes of the form #RRGGBB.",
+            all_colour_names.join(", ")
+        );
         exit(1);
     };
 
-    let script_book = generate_script_book(script_colour, &script);
+    if args.version.chars().any(|c| matches!(c, '0'..='9' | '.')) {
+        eprintln!("Warning: Version string contains non-digit characters.");
+    }
+
+    let script_book = generate_script_book(script_colour, &script, &args.version);
 
     if let Err(e) = args.output_script_file().write_all(script_book.as_bytes()) {
         eprintln!("Error while writing script command: {e}");
@@ -47,26 +56,39 @@ fn main() {
     println!("Finished successfully!");
 }
 
-fn generate_script_book(script_color: TextColour, script: &Script) -> String {
+fn generate_script_book(script_color: TextColour, script: &Script, script_version: &str) -> String {
     let script_name = &script.meta.name;
-    let cover_page: MinecraftText = vec![
-        "".mc(),
-        "\n\n\n   BLOOD ON THE\n    CLOCKTOWER".mc().bold(),
-        "\n".mc(),
-        format!(r#"  "{script_name}""#)
-            .mc()
-            .italic()
-            .color(script_color),
-        "\n".mc(),
-        "ROLE CHEAT SHEET".mc().bold(),
-        "\n\n\n\n* next to ability means Not the First Night.".mc(),
-    ]
-    .mc();
 
-    let mut pages = Vec::with_capacity(script.characters.len() + 1);
+    let page_count = script.characters.len() + 1 + script.meta.bootlegger.len();
+    let mut pages = Vec::with_capacity(page_count);
+
+    let cover_page = generate_cover_page(script_name, script_color, script_version);
     pages.push(cover_page);
+
     for c in &script.characters {
+        if c.team == CharacterTeam::loric && c.name == "Bootlegger" {
+            // Do not create a page for the Bootlegger Loric character, the bootlegger modifiers
+            // are in the meta of the script
+            continue;
+        }
+
         pages.push(generate_character_page(c));
+    }
+    for (n, bootlegger) in script.meta.bootlegger.iter().enumerate() {
+        pages.push(generate_character_page(&ScriptCharacter {
+            name: format!("Bootlegger {}", n + 1),
+            team: CharacterTeam::loric,
+            ability: bootlegger.clone(),
+            ..ScriptCharacter::default()
+        }));
+    }
+    for c1 in &script.characters {
+        for jinx in &c1.jinxes {
+            let Some(c2) = script.characters.iter().find(|c| c.id == jinx.id) else {
+                continue;
+            };
+            pages.push(generate_jinx_page(c1, c2, jinx));
+        }
     }
     let pages_str = pages
         .iter()
@@ -92,11 +114,37 @@ fn generate_script_book(script_color: TextColour, script: &Script) -> String {
     .mc();
     let lore = lore.cmd();
 
+    // Ensure text is escaped
+    let title = format!("{script_name} Roles").mc().cmd();
+
     format!(
-        "give @s written_book[written_book_content={{pages:[{pages_str}],title:\"{script_name} Roles\",author:\"\"}},custom_name={book_name},lore={lore}]"
+        "give @s written_book[written_book_content={{pages:[{pages_str}],title:{title},author:\"\"}},custom_name={book_name},lore={lore}]"
     )
 }
-
+fn generate_cover_page(
+    script_name: &str,
+    script_color: TextColour,
+    script_version: &str,
+) -> MinecraftText {
+    vec![
+        "".mc(),
+        "\n\n   BLOOD ON THE\n    CLOCKTOWER".mc().bold(),
+        "\n".mc(),
+        format!(r#"  "{script_name}""#)
+            .mc()
+            .italic()
+            .color(script_color),
+        "\n".mc(),
+        "ROLE CHEAT SHEET".mc().bold(),
+        "\n".mc(),
+        format!("        v{script_version}")
+            .mc()
+            .italic()
+            .color(TextColour::Gray),
+        "\n\n\n\n* next to ability means Not the First Night.".mc(),
+    ]
+    .mc()
+}
 fn generate_character_page(c: &ScriptCharacter) -> MinecraftText {
     let color = team_colour(c.team, false);
     vec![
@@ -110,8 +158,28 @@ fn generate_character_page(c: &ScriptCharacter) -> MinecraftText {
     ]
     .mc()
 }
+fn generate_jinx_page(
+    c1: &ScriptCharacter,
+    c2: &ScriptCharacter,
+    jinx: &CharacterJinx,
+) -> MinecraftText {
+    let color1 = team_colour(c1.team, false);
+    let color2 = team_colour(c2.team, false);
+    vec![
+        "".mc(),
+        "      ".mc(),
+        "JINX".mc().bold().color(TextColour::Gold),
+        "\n\n".mc(),
+        c1.name.mc().color(color1).underlined(),
+        "/ ".mc().color(color1),
+        c2.name.mc().color(color2).underlined(),
+        ":\n".mc().color(color2),
+        jinx.reason.mc(),
+    ]
+    .mc()
+}
 fn team_colour(team: CharacterTeam, light: bool) -> TextColour {
-    use TextColour::{Aqua, DarkBlue, DarkRed, Gray, Gold, DarkGreen};
+    use TextColour::{Aqua, DarkBlue, DarkGreen, DarkRed, Gold, Gray};
 
     match team {
         CharacterTeam::townsfolk | CharacterTeam::outsider if light => Aqua,
@@ -144,7 +212,7 @@ fn generate_role_papers(script: &Script) -> String {
 }
 
 fn generate_role_paper(c: &ScriptCharacter) -> Option<String> {
-    use TextColour::{White, Gray};
+    use TextColour::{Gray, White};
 
     let (item_type, components) = item_type(c)?;
 

@@ -5,6 +5,7 @@ use serde::de::value::MapAccessDeserializer;
 use serde::de::{Error, MapAccess, Visitor};
 use serde::{Deserialize, Deserializer};
 use serde_json::Value;
+use std::collections::HashSet;
 use std::fmt::Formatter;
 
 #[derive(Clone, Eq, PartialEq, Debug)]
@@ -46,6 +47,15 @@ impl<'de> Deserialize<'de> for Script {
         }
 
         characters.sort_by_key(|c| c.team);
+
+        // Filter the jinxes to only contain ones with both characters in play
+        let character_ids = characters
+            .iter()
+            .map(|c| c.id.clone())
+            .collect::<HashSet<_>>();
+        for c in &mut characters {
+            c.jinxes.retain(|jinx| character_ids.contains(&jinx.id));
+        }
 
         Ok(Script {
             meta: meta.unwrap_or_default(),
@@ -126,7 +136,7 @@ impl<'de> Deserialize<'de> for ScriptItem {
 }
 
 #[allow(non_snake_case)]
-#[derive(Deserialize, Clone, Eq, PartialEq, Debug)]
+#[derive(Deserialize, Clone, Eq, PartialEq, Debug, Default)]
 pub struct ScriptCharacter {
     /// Character ID, alphanumeric lowercase without spaces
     pub id: String,
@@ -173,8 +183,9 @@ pub struct ScriptCharacter {
 }
 
 #[allow(non_camel_case_types)]
-#[derive(Deserialize, Copy, Clone, Eq, PartialEq, Debug, Ord, PartialOrd)]
+#[derive(Deserialize, Copy, Clone, Eq, PartialEq, Debug, Ord, PartialOrd, Default)]
 pub enum CharacterTeam {
+    #[default]
     townsfolk,
     outsider,
     minion,
@@ -200,8 +211,6 @@ pub struct OfficialCharacter {
 
 #[derive(Deserialize, Default, Clone, Eq, PartialEq, Debug)]
 pub struct Meta {
-    /// The ID property must be called '_meta' for the Script metadata object.
-    pub id: MetaID,
     /// The script name
     pub name: String,
     /// The script author
@@ -213,14 +222,21 @@ pub struct Meta {
     /// Whether the script title / author should be hidden on the app
     #[serde(default, rename = "hide_title")]
     pub hide_title: bool,
-    // TODO: More fields will be needed soon - background, almanac, bootlegger, firstNight, otherNight
-}
-
-#[derive(Deserialize, Default, Clone, Eq, PartialEq, Debug)]
-pub enum MetaID {
-    #[serde(rename = "_meta")]
-    #[default]
-    _Meta,
+    /// The script background image
+    #[serde(default)]
+    pub background: String,
+    /// A link to the script's almanac page
+    #[serde(default)]
+    pub almanac: String,
+    /// A list of homebrew rules that are to be used for this script.
+    #[serde(default)]
+    pub bootlegger: Vec<String>,
+    /// The relative First Night order of characters on this script.
+    #[serde(default, rename = "firstNight")]
+    pub first_night: Vec<String>,
+    /// The relative Other Nights order of characters on this script.
+    #[serde(default, rename = "otherNight")]
+    pub other_night: Vec<String>,
 }
 
 #[cfg(test)]
@@ -272,11 +288,8 @@ mod test {
 
         let expected = Script {
             meta: Meta {
-                id: MetaID::_Meta,
                 name: "cool_script".to_string(),
-                author: String::new(),
-                logo: String::new(),
-                hide_title: false,
+                ..Meta::default()
             },
             characters: vec![],
         };
