@@ -183,7 +183,7 @@ pub struct ScriptCharacter {
 }
 
 #[allow(non_camel_case_types)]
-#[derive(Deserialize, Copy, Clone, Eq, PartialEq, Debug, Ord, PartialOrd, Default)]
+#[derive(Deserialize, Copy, Clone, Eq, PartialEq, Debug, Ord, PartialOrd, Default, Hash)]
 pub enum CharacterTeam {
     #[default]
     townsfolk,
@@ -267,6 +267,11 @@ mod test {
             .map(lookup_character)
             .map(Option::unwrap)
             .map(Clone::clone)
+            // Remove the jinxes since we are not testing them here
+            .map(|c| ScriptCharacter {
+                jinxes: vec![],
+                ..c
+            })
             .to_vec();
 
         let expected = Script {

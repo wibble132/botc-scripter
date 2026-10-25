@@ -5,7 +5,7 @@
 use std::fmt::Write;
 use std::mem;
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub enum MinecraftText {
     // Written as quoted text, "A" is equivalent to "{text: A}"
     String(String),
@@ -39,6 +39,15 @@ impl MinecraftText {
                 if let Some(c) = &r.color {
                     _ = write!(out, ",color:{}", c.cmd());
                 }
+
+                if let Some(click_event) = &r.click_event {
+                    match click_event {
+                        ClickEvent::ChangePage { page } => {
+                            _ = write!(out, ",click_event:{{action:change_page,page:{page}}}");
+                        }
+                    }
+                }
+
                 out += "}";
                 out
             }
@@ -66,6 +75,9 @@ impl MinecraftText {
     pub fn bold(self) -> Self {
         self.richen(|r| r.bold = true)
     }
+    pub fn unbold(self) -> Self {
+        self.richen(|r| r.bold = false)
+    }
     pub fn italic(self) -> Self {
         self.richen(|r| r.italic = true)
     }
@@ -75,25 +87,35 @@ impl MinecraftText {
     pub fn color(self, color: TextColour) -> Self {
         self.richen(|r| r.color = Some(color))
     }
-    fn richen<Fn>(mut self, f: Fn) -> Self
+    pub fn page_link(self, page: u32) -> Self {
+        self.richen(|r| r.click_event = Some(ClickEvent::ChangePage { page }))
+    }
+    fn richen<F>(self, f: F) -> Self
     where
-        Fn: FnOnce(&mut RichText),
+        F: Fn(&mut RichText) + Copy,
     {
-        match &mut self {
-            MinecraftText::String(s) => {
-                let text = mem::take(s);
+        match self {
+            MinecraftText::String(text) => {
                 let mut rich = RichText {
                     text,
                     ..RichText::default()
                 };
                 f(&mut rich);
-                self = MinecraftText::Rich(rich);
+                MinecraftText::Rich(rich)
             }
-            MinecraftText::Array(_) => panic!("Not supported"),
-            MinecraftText::Rich(r) => f(r),
-        }
+            MinecraftText::Array(mut v) => {
+                for t in &mut v {
+                    let tt = mem::replace(t, MinecraftText::String(String::new()));
+                    *t = tt.richen(f);
+                }
 
-        self
+                MinecraftText::Array(v)
+            }
+            MinecraftText::Rich(mut r) => {
+                f(&mut r);
+                MinecraftText::Rich(r)
+            }
+        }
     }
 }
 
@@ -127,16 +149,35 @@ impl ToMcText for Vec<MinecraftText> {
     }
 }
 
-#[derive(Default, Clone)]
+pub(crate) trait JoinMcText {
+    fn join(slice: Self, sep: MinecraftText) -> MinecraftText;
+}
+impl JoinMcText for Vec<MinecraftText> {
+    fn join(slice: Self, sep: MinecraftText) -> MinecraftText {
+        let mut iter = slice.into_iter();
+        let Some(mut text) = iter.next() else {
+            return "".mc();
+        };
+
+        for line in iter {
+            text.push(sep.clone());
+            text.push(line);
+        }
+        text
+    }
+}
+
+#[derive(Default, Clone, Debug)]
 pub struct RichText {
     text: String,
     bold: bool,
     italic: bool,
     underlined: bool,
     color: Option<TextColour>,
+    click_event: Option<ClickEvent>,
 }
 
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, Debug)]
 pub enum TextColour {
     Rgb { red: u8, green: u8, blue: u8 },
     Black,
@@ -206,7 +247,7 @@ impl TextColour {
     }
     pub fn cmd(self) -> String {
         match self {
-            TextColour::Rgb { red, green, blue } => format!("#{red:X}{green:X}{blue:X}"),
+            TextColour::Rgb { red, green, blue } => format!("\"#{red:02X}{green:02X}{blue:02X}\""),
             TextColour::Black => "black".to_string(),
             TextColour::DarkBlue => "dark_blue".to_string(),
             TextColour::DarkGreen => "dark_green".to_string(),
@@ -243,6 +284,13 @@ impl TextColour {
         TextColour::Yellow,
         TextColour::White,
     ];
+}
+
+#[derive(Debug, Clone)]
+enum ClickEvent {
+    ChangePage {
+        page: u32,
+    }
 }
 
 #[cfg(test)]
@@ -334,7 +382,7 @@ mod test {
                 ..RichText::default()
             });
             let result = text.cmd();
-            assert!(result.contains("color:"))
+            assert!(result.contains("color:"));
         }
     }
 }

@@ -1,13 +1,21 @@
 mod args;
+mod book;
 mod characters;
+mod fetch_json;
 mod minecraft_text;
 mod script;
+mod script_data;
 
 use crate::args::Args;
-use crate::minecraft_text::{MinecraftText, TextColour, ToMcText};
-use crate::script::{CharacterJinx, CharacterTeam, Script, ScriptCharacter};
+use crate::book::generate_script_book;
+use crate::minecraft_text::{TextColour, ToMcText};
+use crate::script::{CharacterTeam, Script, ScriptCharacter};
+use crate::script_data::{CharacterItem, ScriptData};
 use clap::Parser;
-use std::io::Write;
+use std::collections::HashMap;
+use std::fs::File;
+use std::io::{Read, Write, stdin};
+use std::path::Path;
 use std::process::exit;
 
 fn main() {
@@ -16,168 +24,158 @@ fn main() {
 
     let args = Args::parse();
 
-    let script: Result<Script, _> = serde_json::from_reader(args.input_stream());
-    let script = match script {
-        Ok(script) => script,
-        Err(e) => {
-            eprintln!("Failed to parse script.");
-            eprintln!("{e}");
-            exit(1);
-        }
-    };
+    let script_id = &args.name;
 
-    let Some(script_colour) = TextColour::try_parse(&args.color) else {
-        eprintln!("Failed to parse colour from \"{}\".", args.color);
-        let all_colour_names = TextColour::ALL_CONSTANTS.map(TextColour::cmd);
+    if script_id == "all" {
+        // Run all online scripts
+        for script_name in script_data::SCRIPT_DATA.keys() {
+            run_script(script_name, &args);
+        }
+    } else {
+        run_script(script_id, &args);
+    }
+}
+
+fn run_script(script_id: &str, args: &Args) {
+    let Some(data) = script_data::SCRIPT_DATA.get(script_id) else {
         eprintln!(
-            "Supported colours are: {}, or hex codes of the form #RRGGBB.",
-            all_colour_names.join(", ")
+            "Could not find data for script {script_id}. Add this script to script-data.json."
         );
         exit(1);
     };
 
-    if args.version.chars().any(|c| matches!(c, '0'..='9' | '.')) {
-        eprintln!("Warning: Version string contains non-digit characters.");
+    let script_colour = data.colour;
+    let item_overrides = &data.items;
+
+    let (version, script) = inputs(args, data);
+
+    if version.0.chars().any(|c| !matches!(c, '0'..='9' | '.')) {
+        eprintln!(
+            "Warning: Version string \"{}\" contains non-digit characters.",
+            version.0
+        );
     }
 
-    let script_book = generate_script_book(script_colour, &script, &args.version);
+    let script_book = generate_script_book(script_colour, &script, &version);
 
     if let Err(e) = args.output_script_file().write_all(script_book.as_bytes()) {
         eprintln!("Error while writing script command: {e}");
         exit(1);
     }
 
-    let role_papers = generate_role_papers(&script);
+    let role_papers = generate_role_papers(&script, item_overrides);
     if let Err(e) = args.output_roles_file().write_all(role_papers.as_bytes()) {
         eprintln!("Error while writing role papers command: {e}");
         exit(1);
     }
 
-    println!("Finished successfully!");
+    println!("Written functions for script {script_id} v{}", version.0);
 }
 
-fn generate_script_book(script_color: TextColour, script: &Script, script_version: &str) -> String {
-    let script_name = &script.meta.name;
+struct Version(String);
 
-    let page_count = script.characters.len() + 1 + script.meta.bootlegger.len();
-    let mut pages = Vec::with_capacity(page_count);
+fn inputs(args: &Args, data: &ScriptData) -> (Version, Script) {
+    // Options for the input are:
+    // 1. Input file set in command line
+    // 2. Script json directly in ScriptData
+    // 3. Script filepath set in ScriptData
+    // 4. Fetch from URL using the script name
 
-    let cover_page = generate_cover_page(script_name, script_color, script_version);
-    pages.push(cover_page);
+    // args.version MUST be set unless we are fetching from URL
+    let mut version = args.version.clone().or_else(|| data.version.clone());
+    let script: Script;
 
-    for c in &script.characters {
-        if c.team == CharacterTeam::loric && c.name == "Bootlegger" {
-            // Do not create a page for the Bootlegger Loric character, the bootlegger modifiers
-            // are in the meta of the script
-            continue;
+    if let Some(file_path) = &args.input_file {
+        let json = read_from_file(file_path);
+        script = script_from_json(&json);
+    } else if let Some(data_script) = &data.script {
+        script = data_script.clone();
+    } else if let Some(file_path) = &data.script_path {
+        let json = read_from_file(file_path);
+        script = script_from_json(&json);
+    } else {
+        let (web_version, json) = read_from_web(&args.name, args.version.as_deref());
+        script = script_from_json(&json);
+        version = Some(web_version);
+    }
+
+    let Some(version) = version else {
+        eprintln!("No version set.\n --version needs to be set for offline scripts");
+        exit(1);
+    };
+
+    (Version(version), script)
+}
+
+fn read_from_file(file_path: &Path) -> String {
+    if file_path.as_os_str() == "-" {
+        // Read from stdin
+        let mut json = String::new();
+        return match stdin().lock().read_to_string(&mut json) {
+            Ok(_) => json,
+            Err(e) => {
+                eprintln!("Failed to read script from stdin: {e}");
+                exit(1);
+            }
+        };
+    }
+
+    let mut file = match File::open(file_path) {
+        Err(e) => {
+            eprintln!("Failed to open file {}.", file_path.display());
+            eprintln!("{e}");
+            exit(1);
         }
+        Ok(f) => f,
+    };
 
-        pages.push(generate_character_page(c));
-    }
-    for (n, bootlegger) in script.meta.bootlegger.iter().enumerate() {
-        pages.push(generate_character_page(&ScriptCharacter {
-            name: format!("Bootlegger {}", n + 1),
-            team: CharacterTeam::loric,
-            ability: bootlegger.clone(),
-            ..ScriptCharacter::default()
-        }));
-    }
-    for c1 in &script.characters {
-        for jinx in &c1.jinxes {
-            let Some(c2) = script.characters.iter().find(|c| c.id == jinx.id) else {
-                continue;
-            };
-            pages.push(generate_jinx_page(c1, c2, jinx));
+    let mut json = String::new();
+    match file.read_to_string(&mut json) {
+        Ok(_) => json,
+        Err(e) => {
+            eprintln!("Failed to read script from file {}", file_path.display());
+            eprintln!("{e}");
+            exit(1);
         }
     }
-    let pages_str = pages
-        .iter()
-        .map(MinecraftText::cmd)
-        .collect::<Vec<_>>()
-        .join(",");
-
-    let book_name = format!("{script_name} Script")
-        .mc()
-        .color(script_color)
-        .underlined()
-        .bold()
-        .cmd();
-
-    let lore: MinecraftText = vec![
-        "Useful role cheat sheet for ".mc().color(TextColour::Gray),
-        vec![
-            script_name.mc().color(script_color),
-            " script.".mc().color(TextColour::Gray),
-        ]
-        .mc(),
-    ]
-    .mc();
-    let lore = lore.cmd();
-
-    // Ensure text is escaped
-    let title = format!("{script_name} Roles").mc().cmd();
-
-    format!(
-        "give @s written_book[written_book_content={{pages:[{pages_str}],title:{title},author:\"\"}},custom_name={book_name},lore={lore}]"
-    )
 }
-fn generate_cover_page(
-    script_name: &str,
-    script_color: TextColour,
-    script_version: &str,
-) -> MinecraftText {
-    vec![
-        "".mc(),
-        "\n\n   BLOOD ON THE\n    CLOCKTOWER".mc().bold(),
-        "\n".mc(),
-        format!(r#"  "{script_name}""#)
-            .mc()
-            .italic()
-            .color(script_color),
-        "\n".mc(),
-        "ROLE CHEAT SHEET".mc().bold(),
-        "\n".mc(),
-        format!("        v{script_version}")
-            .mc()
-            .italic()
-            .color(TextColour::Gray),
-        "\n\n\n\n* next to ability means Not the First Night.".mc(),
-    ]
-    .mc()
+fn read_from_web(script_name: &str, version_override: Option<&str>) -> (String, String) {
+    println!("Loading script from online");
+    let script_list = match fetch_json::OnlineScriptData::load_script_list() {
+        Ok(x) => x,
+        Err(e) => {
+            eprintln!("Failed to get script list: {e}");
+            exit(1);
+        }
+    };
+
+    let json_result = match version_override {
+        Some(v) => script_list
+            .script_json(script_name, v)
+            .map(|x| (v.to_owned(), x)),
+        None => script_list.latest_script_json(script_name),
+    };
+
+    match json_result {
+        Ok(x) => x,
+        Err(e) => {
+            eprintln!("Failed to download json for script: {e}");
+            exit(1);
+        }
+    }
 }
-fn generate_character_page(c: &ScriptCharacter) -> MinecraftText {
-    let color = team_colour(c.team, false);
-    vec![
-        "".mc(),
-        "      ".mc(),
-        team_text(c.team).mc().bold().color(color),
-        "\n\n".mc(),
-        c.name.mc().color(color).underlined(),
-        ":\n".mc().color(color),
-        c.ability.mc(),
-    ]
-    .mc()
+fn script_from_json(script_json: &str) -> Script {
+    let script: Result<Script, _> = serde_json::from_str(script_json);
+    match script {
+        Ok(script) => script,
+        Err(e) => {
+            eprintln!("Failed to parse script.");
+            eprintln!("{e}");
+            exit(1);
+        }
+    }
 }
-fn generate_jinx_page(
-    c1: &ScriptCharacter,
-    c2: &ScriptCharacter,
-    jinx: &CharacterJinx,
-) -> MinecraftText {
-    let color1 = team_colour(c1.team, false);
-    let color2 = team_colour(c2.team, false);
-    vec![
-        "".mc(),
-        "      ".mc(),
-        "JINX".mc().bold().color(TextColour::Gold),
-        "\n\n".mc(),
-        c1.name.mc().color(color1).underlined(),
-        "/ ".mc().color(color1),
-        c2.name.mc().color(color2).underlined(),
-        ":\n".mc().color(color2),
-        jinx.reason.mc(),
-    ]
-    .mc()
-}
+
 fn team_colour(team: CharacterTeam, light: bool) -> TextColour {
     use TextColour::{Aqua, DarkBlue, DarkGreen, DarkRed, Gold, Gray};
 
@@ -202,19 +200,33 @@ fn team_text(team: CharacterTeam) -> &'static str {
     }
 }
 
-fn generate_role_papers(script: &Script) -> String {
+fn generate_role_papers(
+    script: &Script,
+    item_overrides: &HashMap<String, CharacterItem>,
+) -> String {
     let roles = script
         .characters
         .iter()
-        .filter_map(generate_role_paper)
+        .filter_map(|c| generate_role_paper(c, item_overrides.get(&c.id)))
         .collect::<Vec<_>>();
     roles.join("\n")
 }
 
-fn generate_role_paper(c: &ScriptCharacter) -> Option<String> {
+fn generate_role_paper(
+    c: &ScriptCharacter,
+    item_override: Option<&CharacterItem>,
+) -> Option<String> {
     use TextColour::{Gray, White};
 
-    let (item_type, components) = item_type(c)?;
+    let (item_type, components) = match (c, item_override) {
+        // An item override is set
+        (_, Some(item)) => {
+            let item_id = item.item_id.as_ref()?;
+            (item_id.as_str(), item.components.as_str())
+        }
+        (c, None) if !should_skip_item(c) => ("paper", ""),
+        _ => return None,
+    };
 
     let colour = team_colour(c.team, true);
     let team_caps = team_text(c.team).to_ascii_uppercase();
@@ -230,31 +242,16 @@ fn generate_role_paper(c: &ScriptCharacter) -> Option<String> {
     }
     let lore = lore.cmd();
 
-    let components = components.join(",");
     let command = format!("give @s {item_type}[custom_name={name},lore={lore},{components}]");
 
     Some(command)
 }
 
-fn item_type(c: &ScriptCharacter) -> Option<(String, Vec<String>)> {
-    let mut extra = vec![];
-    let res = match c.team {
-        CharacterTeam::loric if c.id == "godofug" => "copper_helmet",
-        CharacterTeam::fabled | CharacterTeam::loric | CharacterTeam::traveller => return None,
-        _ => match c.id.as_str() {
-            "drunk" | "butler_drunk" | "lunatic" | "marionette" => return None,
-            "lilmonsta" => "piglin_head", // TODO: custom player head choice support
-            "vizier" => {
-                extra.push(
-                    "trim={pattern:\"minecraft:wild\",material:\"minecraft:redstone\"}".into(),
-                );
-                "golden_helmet"
-            }
-            _ => "paper",
-        },
-    };
-
-    Some((res.to_string(), extra))
+fn should_skip_item(c: &ScriptCharacter) -> bool {
+    matches!(
+        c.team,
+        CharacterTeam::fabled | CharacterTeam::loric | CharacterTeam::traveller
+    ) || matches!(c.id.as_str(), "drunk" | "lunatic" | "marionette")
 }
 
 fn wrap_text(text: &str, width: usize) -> Vec<String> {

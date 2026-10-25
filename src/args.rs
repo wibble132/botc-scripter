@@ -1,52 +1,35 @@
 use std::fs;
 use std::fs::File;
-use std::io::{BufRead, BufReader, stdin};
 use std::path::PathBuf;
 use std::process::exit;
 
 #[derive(clap::Parser)]
 pub struct Args {
     /// The short name for the script
+    ///
+    /// If set to `all`, this will run on every script
     pub name: String,
 
-    /// The Minecraft colour name for the script
-    pub color: String,
-
-    /// The version of the script, e.g. "1.0.0", "3.2.1"
-    pub version: String,
+    /// The version of the script, e.g. "1.0.0", "3.2.1".
+    ///
+    /// Can be omitted for online scripts, in which case the latest version will be used.
+    #[arg(short, long)]
+    pub version: Option<String>,
 
     /// The input json script file. Defaults to stdin.
     #[arg(alias = "in", short, long)]
-    input_file: Option<PathBuf>,
+    pub input_file: Option<PathBuf>,
 
     /// The base directory for the outputs.
     ///
     /// Files will be written to `<out>/script/<name>.mcfunction` and `<out>/roles/<name>.mcfunction`.
     ///
-    /// Defaults to the current working directory.
+    /// Defaults to `./out`.
     #[arg(alias = "out", short, long)]
     output_dir: Option<PathBuf>,
 }
 
 impl Args {
-    pub fn input_stream(&self) -> Box<dyn BufRead> {
-        if let Some(file_path) = &self.input_file
-            && file_path.as_os_str() != "-"
-        {
-            let file = match File::open(file_path) {
-                Err(e) => {
-                    eprintln!("Failed to open file {}.", file_path.display());
-                    eprintln!("{e}");
-                    exit(1);
-                }
-                Ok(f) => f,
-            };
-
-            Box::new(BufReader::new(file))
-        } else {
-            Box::new(BufReader::new(stdin().lock()))
-        }
-    }
     pub fn output_script_file(&self) -> File {
         self.output_file("script")
     }
@@ -57,7 +40,11 @@ impl Args {
         let mut base_dir = self
             .output_dir
             .clone()
-            .unwrap_or_else(Self::get_current_dir);
+            .unwrap_or_else(Self::get_default_out);
+
+        if !fs::exists(&base_dir).unwrap() {
+            fs::create_dir(&base_dir).unwrap();
+        }
 
         base_dir.push(dir);
         if !fs::exists(&base_dir).unwrap() {
@@ -74,14 +61,16 @@ impl Args {
             }
         }
     }
-    fn get_current_dir() -> PathBuf {
-        match std::env::current_dir() {
+    fn get_default_out() -> PathBuf {
+        let mut current_dir = match std::env::current_dir() {
             Ok(d) => d,
             Err(e) => {
                 eprintln!("Cannot find current directory. Specify output directory with `--out`.");
                 eprintln!("{e}");
                 exit(1);
             }
-        }
+        };
+        current_dir.push("out");
+        current_dir
     }
 }

@@ -1,0 +1,364 @@
+[
+  {
+    "id": "af",
+    "colour": "dark_purple",
+    "items": [
+      {
+        "id": "lilmonsta",
+        "item": "piglin_head"
+      }
+    ]
+  },
+  {
+    "id": "agf",
+    "colour": "dark_gray",
+    "items": [
+      {
+        "id": "vizier",
+        "item": "golden_helmet",
+        "components": "trim={pattern:\"minecraft:wild\",material:\"minecraft:redstone\"}"
+      },
+      {
+        "id": "lilmonsta",
+        "item": "piglin_head"
+      }
+    ]
+  },
+  {
+    "id": "ak",
+    "colour": "dark_gray"
+  },
+  {
+    "id": "amab",
+    "colour": "aqua"
+  },
+  {
+    "id": "amo",
+    "colour": "green",
+    "items": [
+      {
+        "id": "lilmonsta",
+        "item": "piglin_head"
+      }
+    ]
+  },
+  {
+    "id": "bmr",
+    "colour": "gold"
+  },
+  {
+    "id": "br",
+    "colour": "gold"
+  },
+  {
+    "id": "bs",
+    "colour": "dark_red"
+  },
+  {
+    "id": "bywt",
+    "colour": "gold"
+  },
+  {
+    "id": "cac",
+    "colour": "dark_red"
+  },
+  {
+    "id": "ca",
+    "colour": "dark_red"
+  },
+  {
+    "id": "cc",
+    "colour": "dark_blue"
+  },
+  {
+    "id": "cf",
+    "colour": "gold"
+  },
+  {
+    "id": "clc",
+    "colour": "aqua"
+  },
+  {
+    "id": "cls",
+    "colour": "dark_aqua"
+  },
+  {
+    "id": "dj",
+    "colour": "gold"
+  },
+  {
+    "id": "dmr",
+    "colour": "#874307"
+  },
+  {
+    "id": "dyd",
+    "colour": "dark_red"
+  },
+  {
+    "id": "ete",
+    "colour": "dark_blue"
+  },
+  {
+    "id": "fb",
+    "colour": "gold",
+    "url": "https://scripts.botc.ink/script/all_roles",
+    "items": [
+      {
+        "id": "vizier",
+        "item": "golden_helmet",
+        "components": "trim={pattern:\"minecraft:wild\",material:\"minecraft:redstone\"}"
+      },
+      {
+        "id": "lilmonsta",
+        "item": "piglin_head"
+      }
+    ]
+  },
+  {
+    "id": "fm",
+    "colour": "dark_green"
+  },
+  {
+    "id": "ggg",
+    "colour": "light_purple"
+  },
+  {
+    "id": "gm",
+    "colour": "dark_red"
+  },
+  {
+    "id": "h108",
+    "colour": "red"
+  },
+  {
+    "id": "hhr",
+    "colour": "dark_green"
+  },
+  {
+    "id": "hs",
+    "colour": "gray"
+  },
+  {
+    "id": "ib",
+    "colour": "green"
+  },
+  {
+    "id": "ic",
+    "colour": "blue"
+  },
+  {
+    "id": "ld",
+    "colour": "blue"
+  },
+  {
+    "id": "lf",
+    "colour": "dark_green"
+  },
+  {
+    "id": "ll",
+    "colour": "dark_blue"
+  },
+  {
+    "id": "lnd",
+    "colour": "aqua"
+  },
+  {
+    "id": "lwl",
+    "colour": "blue"
+  },
+  {
+    "id": "mb",
+    "colour": "blue"
+  },
+  {
+    "id": "mf",
+    "colour": "dark_purple"
+  },
+  {
+    "id": "mm",
+    "colour": "dark_green",
+    "items": [
+      {
+        "id": "lilmonsta",
+        "item": "piglin_head"
+      }
+    ]
+  },
+  {
+    "id": "mmw",
+    "colour": "gold"
+  },
+  {
+    "id": "mo",
+    "colour": "light_purple"
+  },
+  {
+    "id": "mr",
+    "colour": "red"
+  },
+  {
+    "id": "nfm",
+    "colour": "dark_red"
+  },
+  {
+    "id": "ngj",
+    "colour": "aqua"
+  },
+  {
+    "id": "oti",
+    "colour": "blue"
+  },
+  {
+    "id": "otr",
+    "colour": "dark_blue"
+  },
+  {
+    "id": "pl",
+    "colour": "light_purple"
+  },
+  {
+    "id": "po",
+    "colour": "gold"
+  },
+  {
+    "id": "pt",
+    "colour": "dark_green"
+  },
+  {
+    "id": "rb",
+    "colour": "dark_blue"
+  },
+  {
+    "id": "rdd",
+    "colour": "green"
+  },
+  {
+    "id": "rd",
+    "colour": "dark_purple"
+  },
+  {
+    "id": "rgh",
+    "colour": "gray"
+  },
+  {
+    "id": "sha",
+    "colour": "gray"
+  },
+  {
+    "id": "sot",
+    "colour": "aqua",
+    "items": [
+      {
+        "id": "godofug",
+        "item": "copper_helmet"
+      }
+    ]
+  },
+  {
+    "id": "sr",
+    "colour": "gold"
+  },
+  {
+    "id": "st",
+    "colour": "blue"
+  },
+  {
+    "id": "stm",
+    "colour": "dark_blue",
+    "items": [
+      {
+        "id": "lilmonsta",
+        "item": "player_head",
+        "components": "profile={id:[I;1244094924,-881895717,-1666651145,-226943355],properties:[{name:\"textures\",value:\"e3RleHR1cmVzOntTS0lOOnt1cmw6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvN2RiYjRlYWMzYjM4ZDAwZWVmNDJkODAyNmI1OGJhMTQ5MGMxMDk3MTM4MmFhOTE0MmYxMWNmMWViMzZhYmY5MSJ9fX0=\"}]}"
+      },
+      {
+        "id": "godofug",
+        "item": "copper_helmet"
+      }
+    ]
+  },
+  {
+    "id": "sv",
+    "colour": "dark_purple"
+  },
+  {
+    "id": "tb",
+    "colour": "dark_red"
+  },
+  {
+    "id": "test",
+    "colour": "black",
+    "script_path": "out/test.json",
+    "version": "0.0.1"
+  },
+  {
+    "id": "tmt",
+    "colour": "blue"
+  },
+  {
+    "id": "tnst",
+    "colour": "dark_aqua"
+  },
+  {
+    "id": "travellers",
+    "colour": "black",
+    "script": [
+      {
+        "id": "_meta",
+        "name": "The Travellers"
+      },
+      "thief",
+      "bureaucrat",
+      "barista",
+      "harlot",
+      "butcher",
+      "cacklejack",
+      "gunslinger",
+      "matron",
+      "gangster",
+      "bonecollector",
+      "judge",
+      "apprentice",
+      "beggar",
+      "deviant",
+      "scapegoat",
+      "gnome",
+      "bishop",
+      "voudon"
+    ],
+    "version": "1.0.0"
+  },
+  {
+    "id": "trb",
+    "colour": "dark_red"
+  },
+  {
+    "id": "tt",
+    "colour": "gold",
+    "items": [
+      {
+        "id": "lilmonsta",
+        "item": "player_head",
+        "components": "profile={id:[I;190426116,-340503024,-1839887773,-1381429238],properties:[{name:\"textures\",value:\"e3RleHR1cmVzOntTS0lOOnt1cmw6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvY2JkNzQxODRjODkzYTk5MDQ5YTU2YzEzY2JkZWQzMzc0NGI1MjEyNjk5OTM2MzAyYThmMzNkNDY5NDE0MjRlNCJ9fX0=\"}]}"
+      }
+    ]
+  },
+  {
+    "id": "wwyd",
+    "colour": "red"
+  },
+  {
+    "id": "x",
+    "colour": "dark_green"
+  },
+  {
+    "id": "yfs2",
+    "colour": "yellow",
+    "items": [
+      {
+        "id": "lilmonsta",
+        "item": "piglin_head"
+      }
+    ]
+  }
+]
