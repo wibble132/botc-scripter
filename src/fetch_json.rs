@@ -125,4 +125,8 @@ impl OnlineScriptData {
         };
         get_text_from_url(&format!("{url}json/")).map(|text| (version.clone(), text))
     }
+    pub fn script_name(&self, script_id: &str) -> Result<&str, FetchError> {
+        let script = self.find_script(script_id)?;
+        Ok(&script.name)
+    }
 }

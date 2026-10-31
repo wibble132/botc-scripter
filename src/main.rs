@@ -47,7 +47,15 @@ fn create_script_functions(script_id: &str, args: &Args) {
     let script_colour = data.colour;
     let item_overrides = &data.items;
 
-    let (version, script) = inputs(args, data);
+    let (version, mut script) = inputs(args, data);
+
+    if script.meta.name.is_empty() {
+        println!(
+            "Warning: No script name set for script with id {}",
+            args.name
+        );
+        script.meta.name = "Unknown".to_string();
+    }
 
     if version.0.chars().any(|c| !matches!(c, '0'..='9' | '.')) {
         eprintln!(
@@ -94,8 +102,8 @@ fn inputs(args: &Args, data: &ScriptData) -> (Version, Script) {
         let json = read_from_file(file_path);
         script = script_from_json(&json);
     } else {
-        let (web_version, json) = read_from_web(&args.name, args.version.as_deref());
-        script = script_from_json(&json);
+        let (web_version, web_script) = read_from_web(&args.name, args.version.as_deref());
+        script = web_script;
         version = Some(web_version);
     }
 
@@ -139,7 +147,7 @@ fn read_from_file(file_path: &Path) -> String {
         }
     }
 }
-fn read_from_web(script_name: &str, version_override: Option<&str>) -> (String, String) {
+fn read_from_web(script_name: &str, version_override: Option<&str>) -> (String, Script) {
     println!("Loading script from online");
     let script_list = match fetch_json::OnlineScriptData::load_script_list() {
         Ok(x) => x,
@@ -156,13 +164,22 @@ fn read_from_web(script_name: &str, version_override: Option<&str>) -> (String, 
         None => script_list.latest_script_json(script_name),
     };
 
-    match json_result {
+    let (v, json) = match json_result {
         Ok(x) => x,
         Err(e) => {
             eprintln!("Failed to download json for script: {e}");
             exit(1);
         }
+    };
+
+    let mut script = script_from_json(&json);
+    if script.meta.name.is_empty()
+        && let Ok(full_script_name) = script_list.script_name(script_name)
+    {
+        full_script_name.clone_into(&mut script.meta.name);
     }
+
+    (v, script)
 }
 fn script_from_json(script_json: &str) -> Script {
     let script: Result<Script, _> = serde_json::from_str(script_json);
