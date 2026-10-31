@@ -1,7 +1,7 @@
 use crate::minecraft_text::JoinMcText;
 use crate::minecraft_text::{MinecraftText, TextColour, ToMcText};
 use crate::script::{CharacterJinx, CharacterTeam, Script, ScriptCharacter};
-use crate::{team_colour, team_text, Version};
+use crate::{Version, team_colour, team_text};
 use std::collections::HashMap;
 
 #[derive(Copy, Clone, Eq, PartialEq, Hash)]
@@ -310,5 +310,46 @@ impl Book {
         }
 
         self.pages
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    #[test]
+    fn simple_book() {
+        let mut book = Book::new("".mc(), 1);
+        book.add_text("wibble".mc(), 1);
+        let result = book.finish();
+
+        assert_eq!(result.len(), 1, "book should have a single page");
+        // Header of "", then newline, then the "wibble" we added
+        assert_eq!(result[0].cmd(), r#"["","\n","wibble"]"#);
+    }
+    #[test]
+    fn second_page() {
+        let mut book = Book::new("".mc(), 1);
+        book.add_text("1".mc(), 1);
+        book.add_text("2".mc(), 1);
+        let result = book.finish();
+
+        assert_eq!(result.len(), 2, "book should have a two pages");
+
+        assert_eq!(result[0].cmd(), r#"["","\n","1"]"#);
+        assert_eq!(result[1].cmd(), r#"["","\n","2"]"#);
+    }
+    #[test]
+    fn multiline_fills_page() {
+        let mut book = Book::new("".mc(), 5);
+        // Can't both fit on the same page
+        book.add_text("1".mc(), 3);
+        book.add_text("2".mc(), 3);
+        let result = book.finish();
+
+        assert_eq!(result.len(), 2, "book should have a two pages");
+
+        assert_eq!(result[0].cmd(), r#"["","\n","1"]"#);
+        assert_eq!(result[1].cmd(), r#"["","\n","2"]"#);
     }
 }

@@ -1,7 +1,7 @@
 
 # Build results
 /target
-/result
+/result*
 
 # Working folders
 .direnv
@@ -11,4 +11,4 @@
 # Output folders
 roles
 script
-out
+out*

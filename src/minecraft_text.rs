@@ -31,6 +31,8 @@ impl MinecraftText {
                 if r.bold {
                     out += ",bold:true";
                 }
+
+                // Always write italic since item names default italic:true
                 _ = write!(out, ",italic:{}", r.italic);
                 if r.underlined {
                     out += ",underlined:true";
@@ -288,9 +290,7 @@ impl TextColour {
 
 #[derive(Debug, Clone)]
 enum ClickEvent {
-    ChangePage {
-        page: u32,
-    }
+    ChangePage { page: u32 },
 }
 
 #[cfg(test)]
@@ -383,6 +383,16 @@ mod test {
             });
             let result = text.cmd();
             assert!(result.contains("color:"));
+        }
+    }
+    #[test]
+    fn colour_rgb_written_correct() {
+        let test_colours = ["#000000", "#0000FF", "#00FF00", "#FF0000", "#FFFFFF"];
+
+        for col in test_colours {
+            let colour = TextColour::try_parse(col).unwrap();
+            let result = colour.cmd();
+            assert_eq!(result, format!(r#""{col}""#));
         }
     }
 }

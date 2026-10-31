@@ -28,16 +28,16 @@ fn main() {
 
     if script_id == "all" {
         // Run all online scripts
-        for script_name in script_data::SCRIPT_DATA.keys() {
-            run_script(script_name, &args);
+        for script_name in script_data::all_script_keys() {
+            create_script_functions(script_name, &args);
         }
     } else {
-        run_script(script_id, &args);
+        create_script_functions(script_id, &args);
     }
 }
 
-fn run_script(script_id: &str, args: &Args) {
-    let Some(data) = script_data::SCRIPT_DATA.get(script_id) else {
+fn create_script_functions(script_id: &str, args: &Args) {
+    let Some(data) = script_data::lookup_data(script_id) else {
         eprintln!(
             "Could not find data for script {script_id}. Add this script to script-data.json."
         );

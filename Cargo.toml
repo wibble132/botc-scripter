@@ -11,3 +11,8 @@ ureq = "3.5.0"
 
 [lints.clippy]
 pedantic = "warn"
+
+[profile.release]
+strip = true
+lto = true
+codegen-units = 1

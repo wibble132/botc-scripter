@@ -22,7 +22,14 @@ pub struct CharacterItem {
     pub components: String,
 }
 
-pub static SCRIPT_DATA: LazyLock<HashMap<String, ScriptData>> = LazyLock::new(|| {
+pub fn lookup_data(script_id: &str) -> Option<&ScriptData> {
+    SCRIPT_DATA.get(script_id)
+}
+pub fn all_script_keys() -> impl Iterator<Item = &'static str> {
+    SCRIPT_DATA.keys().map(String::as_str)
+}
+
+static SCRIPT_DATA: LazyLock<HashMap<String, ScriptData>> = LazyLock::new(|| {
     fn items_to_map<T, K, V, F>(is: Vec<T>, f: F) -> HashMap<K, V>
     where
         K: Eq + Hash,
