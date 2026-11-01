@@ -3,7 +3,7 @@ use std::fs::File;
 use std::path::PathBuf;
 use std::process::exit;
 
-#[derive(clap::Parser)]
+#[derive(clap::Parser, Clone)]
 pub struct Args {
     /// The short name for the script
     ///
@@ -26,7 +26,7 @@ pub struct Args {
     ///
     /// Defaults to `./out`.
     #[arg(alias = "out", short, long)]
-    output_dir: Option<PathBuf>,
+    pub output_dir: Option<PathBuf>,
 }
 
 impl Args {
@@ -37,10 +37,7 @@ impl Args {
         self.output_file("roles")
     }
     fn output_file(&self, dir: &str) -> File {
-        let mut base_dir = self
-            .output_dir
-            .clone()
-            .unwrap_or_else(Self::get_default_out);
+        let mut base_dir = self.base_dir();
 
         if !fs::exists(&base_dir).unwrap() {
             fs::create_dir(&base_dir).unwrap();
@@ -60,6 +57,11 @@ impl Args {
                 exit(1);
             }
         }
+    }
+    pub fn base_dir(&self) -> PathBuf {
+        self.output_dir
+            .clone()
+            .unwrap_or_else(Self::get_default_out)
     }
     fn get_default_out() -> PathBuf {
         let mut current_dir = match std::env::current_dir() {

@@ -8,7 +8,7 @@ use serde_json::Value;
 use std::collections::HashSet;
 use std::fmt::Formatter;
 
-#[derive(Clone, Eq, PartialEq, Debug)]
+#[derive(Clone, PartialEq, Debug)]
 pub struct Script {
     pub meta: Meta,
     pub characters: Vec<ScriptCharacter>,
@@ -64,7 +64,7 @@ impl<'de> Deserialize<'de> for Script {
     }
 }
 
-#[derive(Clone, Eq, PartialEq, Debug)]
+#[derive(Clone, PartialEq, Debug)]
 pub enum ScriptItem {
     /// Script Metadata
     Meta(Meta),
@@ -136,7 +136,7 @@ impl<'de> Deserialize<'de> for ScriptItem {
 }
 
 #[allow(non_snake_case)]
-#[derive(Deserialize, Clone, Eq, PartialEq, Debug, Default)]
+#[derive(Deserialize, Clone, PartialEq, Debug, Default)]
 pub struct ScriptCharacter {
     /// Character ID, alphanumeric lowercase without spaces
     pub id: String,
@@ -156,13 +156,13 @@ pub struct ScriptCharacter {
     pub flavor: String,
     /// First night wake-up priority. 0 means this character doesn't wake up during the first night.
     #[serde(default)]
-    pub firstNight: u32,
+    pub firstNight: f64,
     /// First night Storyteller reminder
     #[serde(default)]
     pub firstNightReminder: Option<String>,
     /// Other nights wake-up priority. 0 means this character doesn't wake up during other nights.
     #[serde(default)]
-    pub otherNight: u32,
+    pub otherNight: f64,
     /// Other night Storyteller reminder
     #[serde(default)]
     pub otherNightReminder: Option<String>,
@@ -341,9 +341,9 @@ mod test {
                 edition: "tb".to_string(),
                 ability: "You start knowing that 1 of 2 players is a particular Townsfolk.".to_string(),
                 flavor: "Bloodstains on a dinner jacket? No, this is cooking sherry. How careless.".to_string(),
-                firstNight: 14,
+                firstNight: 14.0,
                 firstNightReminder: Some("Show the Townsfolk character token. Point to both the *TOWNSFOLK* and *WRONG* players.".to_string()),
-                otherNight: 0,
+                otherNight: 0.0,
                 otherNightReminder: None,
                 reminders: vec!["Townsfolk".to_string(), "Wrong".to_string()],
                 remindersGlobal: vec![],

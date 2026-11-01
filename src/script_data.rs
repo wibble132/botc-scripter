@@ -13,6 +13,7 @@ pub struct ScriptData {
     pub colour: TextColour,
     pub items: HashMap<String, CharacterItem>,
     pub script: Option<Script>,
+    pub script_url: Option<String>,
     pub script_path: Option<PathBuf>,
     pub version: Option<String>,
 }
@@ -28,18 +29,44 @@ pub fn lookup_data(script_id: &str) -> Option<&ScriptData> {
 pub fn all_script_keys() -> impl Iterator<Item = &'static str> {
     SCRIPT_DATA.keys().map(String::as_str)
 }
+pub fn script_count() -> usize {
+    SCRIPT_DATA.len()
+}
 
 static SCRIPT_DATA: LazyLock<HashMap<String, ScriptData>> = LazyLock::new(|| {
-    fn items_to_map<T, K, V, F>(is: Vec<T>, f: F) -> HashMap<K, V>
-    where
-        K: Eq + Hash,
-        F: Fn(T) -> (K, V),
-    {
-        is.into_iter().map(f).collect()
-    }
+    let data: Vec<ScriptDataJson> = cfg_select! {
+        any(feature = "static-data", test) => {
+            serde_json::from_str(include_str!("../data/script-data.json"))
+                .expect("Failed to parse script data")
+        }
+        _ => {{
+            use std::path::Path;
+            use std::process::exit;
 
-    let data: Vec<ScriptDataJson> = serde_json::from_str(include_str!("../data/script-data.json"))
-        .expect("Failed to parse script data");
+            let data_path = Path::new("./data/script-data.json");
+            let Ok(data_json) = std::fs::read_to_string(data_path) else {
+                eprintln!("Failed to read script data from {}", data_path.display());
+                exit(1);
+            };
+            match serde_json::from_str(&data_json) {
+                Ok(data) => data,
+                Err(err) => {
+                    eprintln!(
+                        "Failed to parse json script data from {}",
+                        data_path.display()
+                    );
+                    eprintln!("{err}");
+                    exit(1);
+                }
+            }
+        }}
+    };
+
+    let data = if data.iter().any(|d| !d.enabled) {
+        data.into_iter().filter(|d| d.enabled).collect()
+    } else {
+        data
+    };
 
     items_to_map(data, |d: ScriptDataJson| {
         (
@@ -56,12 +83,21 @@ static SCRIPT_DATA: LazyLock<HashMap<String, ScriptData>> = LazyLock::new(|| {
                     )
                 }),
                 script: d.script,
+                script_url: d.script_url,
                 script_path: d.script_path,
                 version: d.version,
             },
         )
     })
 });
+
+fn items_to_map<T, K, V, F>(is: Vec<T>, f: F) -> HashMap<K, V>
+where
+    K: Eq + Hash,
+    F: Fn(T) -> (K, V),
+{
+    is.into_iter().map(f).collect()
+}
 
 #[derive(Deserialize)]
 pub struct ScriptDataJson {
@@ -73,9 +109,16 @@ pub struct ScriptDataJson {
     #[serde(default)]
     script: Option<Script>,
     #[serde(default)]
+    script_url: Option<String>,
+    #[serde(default)]
     script_path: Option<PathBuf>,
     #[serde(default)]
     version: Option<String>,
+    #[serde(default = "true_value")]
+    enabled: bool,
+}
+fn true_value() -> bool {
+    true
 }
 
 impl<'de> Deserialize<'de> for TextColour {

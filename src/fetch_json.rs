@@ -1,6 +1,7 @@
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::fmt::{Display, Formatter};
+use std::sync::LazyLock;
 
 const SCRIPT_LIST_URL: &str = "https://scripts.botc.ink/api/script_ids/";
 
@@ -66,21 +67,25 @@ struct OnlineScript {
     latest_version: String,
 }
 
-fn get_text_from_url(url: &str) -> Result<String, FetchError> {
+pub fn get_text_from_url(url: &str) -> Result<String, FetchError> {
     Ok(ureq::get(url).call()?.body_mut().read_to_string()?)
 }
 
 impl OnlineScriptData {
-    pub fn load_script_list() -> Result<Self, FetchError> {
-        let mut scripts = vec![];
-        let mut next_url = Some(SCRIPT_LIST_URL.to_string());
-        while let Some(url) = next_url {
-            let page: OnlineScriptPage = serde_json::from_str(&get_text_from_url(&url)?)?;
-            scripts.extend(page.scripts);
-            next_url = page.next;
-        }
+    pub fn load_script_list() -> Result<&'static Self, &'static FetchError> {
+        static CACHED_DATA: LazyLock<Result<OnlineScriptData, FetchError>> = LazyLock::new(|| {
+            let mut scripts = vec![];
+            let mut next_url = Some(SCRIPT_LIST_URL.to_string());
+            while let Some(url) = next_url {
+                let page: OnlineScriptPage = serde_json::from_str(&get_text_from_url(&url)?)?;
+                scripts.extend(page.scripts);
+                next_url = page.next;
+            }
 
-        Ok(Self { scripts })
+            Ok(OnlineScriptData { scripts })
+        });
+
+        CACHED_DATA.as_ref()
     }
 
     fn find_script(&self, script_id: &str) -> Result<&OnlineScript, FetchError> {

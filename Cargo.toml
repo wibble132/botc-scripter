@@ -16,3 +16,9 @@ pedantic = "warn"
 strip = true
 lto = true
 codegen-units = 1
+
+[features]
+# If enabled, the script_data.json is baked in at compile time.
+# This checks correct at compile, but also requires recompile when data changes
+# Left disabled by default, and is ignored when running tests.
+static-data = []

@@ -17,6 +17,9 @@ use std::fs::File;
 use std::io::{Read, Write, stdin};
 use std::path::Path;
 use std::process::exit;
+use std::thread::sleep;
+use std::time::Duration;
+use crate::fetch_json::get_text_from_url;
 
 fn main() {
     println!("Note: This project is unaffiliated with The Pandemonium Institute.");
@@ -27,9 +30,27 @@ fn main() {
     let script_id = &args.name;
 
     if script_id == "all" {
+        println!("RUNNING FOR ALL {} SCRIPTS", script_data::script_count());
+        sleep(Duration::from_secs(1));
+
         // Run all online scripts
         for script_name in script_data::all_script_keys() {
-            create_script_functions(script_name, &args);
+            let script_args = Args {
+                name: script_name.to_string(),
+                ..args.clone()
+            };
+
+            let mut script_dir = script_args.base_dir();
+            script_dir.push("script");
+            script_dir.push(format!("{}.mcfunction", script_args.name));
+            if script_dir.exists() {
+                println!("Skipping script {script_name}");
+                continue;
+            }
+
+            println!("Running script {script_name}");
+            create_script_functions(script_name, &script_args);
+            println!();
         }
     } else {
         create_script_functions(script_id, &args);
@@ -47,13 +68,10 @@ fn create_script_functions(script_id: &str, args: &Args) {
     let script_colour = data.colour;
     let item_overrides = &data.items;
 
-    let (version, mut script) = inputs(args, data);
+    let (version, mut script) = inputs(script_id, args, data);
 
     if script.meta.name.is_empty() {
-        println!(
-            "Warning: No script name set for script with id {}",
-            args.name
-        );
+        println!("Warning: No script name set for script with id {script_id}");
         script.meta.name = "Unknown".to_string();
     }
 
@@ -82,14 +100,15 @@ fn create_script_functions(script_id: &str, args: &Args) {
 
 struct Version(String);
 
-fn inputs(args: &Args, data: &ScriptData) -> (Version, Script) {
+fn inputs(script_id: &str, args: &Args, data: &ScriptData) -> (Version, Script) {
     // Options for the input are:
     // 1. Input file set in command line
     // 2. Script json directly in ScriptData
     // 3. Script filepath set in ScriptData
-    // 4. Fetch from URL using the script name
+    // 4. Fetch from URL set in ScriptData
+    // 5. Fetch from URL using the script name
 
-    // args.version MUST be set unless we are fetching from URL
+    // args.version MUST be set unless we are fetching from URL using script name
     let mut version = args.version.clone().or_else(|| data.version.clone());
     let script: Script;
 
@@ -101,8 +120,18 @@ fn inputs(args: &Args, data: &ScriptData) -> (Version, Script) {
     } else if let Some(file_path) = &data.script_path {
         let json = read_from_file(file_path);
         script = script_from_json(&json);
+    } else if let Some(data_script_url) = &data.script_url {
+        let Ok(json) = get_text_from_url(data_script_url) else {
+            eprintln!("Failed to fetch script from URL: {data_script_url}");
+            exit(1);
+        };
+
+        script = script_from_json(&json);
     } else {
-        let (web_version, web_script) = read_from_web(&args.name, args.version.as_deref());
+        let (web_version, web_script) = read_from_web(
+            script_id,
+            args.version.as_deref(),
+        );
         script = web_script;
         version = Some(web_version);
     }

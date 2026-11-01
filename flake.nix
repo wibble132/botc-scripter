@@ -31,9 +31,11 @@
         default = naersk'.buildPackage {
           src = ./.;
           CARGO_BUILD_TARGET = "x86_64-unknown-linux-musl";
+          cargoBuildOptions = opts: opts ++ [ "--features" "static-data" ];
         };
         dynamic = naersk'.buildPackage {
           src = ./.;
+          cargoBuildOptions = opts: opts ++ [ "--features" "static-data" ];
         };
       };
 
