@@ -4,6 +4,7 @@
 
 use std::fmt::Write;
 use std::mem;
+use url::Url;
 
 #[derive(Clone, Debug)]
 pub enum MinecraftText {
@@ -44,6 +45,10 @@ impl MinecraftText {
 
                 if let Some(click_event) = &r.click_event {
                     match click_event {
+                        ClickEvent::OpenUrl { url } => {
+                            let url = Self::escape_string(url.as_str());
+                            _ = write!(out, ",click_event:{{action:open_url,url:{url}}}");
+                        }
                         ClickEvent::ChangePage { page } => {
                             _ = write!(out, ",click_event:{{action:change_page,page:{page}}}");
                         }
@@ -91,6 +96,9 @@ impl MinecraftText {
     }
     pub fn page_link(self, page: u32) -> Self {
         self.richen(|r| r.click_event = Some(ClickEvent::ChangePage { page }))
+    }
+    pub fn open_url(self, url: &Url) -> Self {
+        self.richen(|r| r.click_event = Some(ClickEvent::OpenUrl { url: url.clone() }))
     }
     fn richen<F>(self, f: F) -> Self
     where
@@ -290,6 +298,7 @@ impl TextColour {
 
 #[derive(Debug, Clone)]
 enum ClickEvent {
+    OpenUrl { url: Url },
     ChangePage { page: u32 },
 }
 

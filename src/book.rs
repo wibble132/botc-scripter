@@ -3,6 +3,9 @@ use crate::minecraft_text::{MinecraftText, TextColour, ToMcText};
 use crate::script::{CharacterJinx, CharacterTeam, Script, ScriptCharacter};
 use crate::{Version, team_colour, team_text};
 use std::collections::HashMap;
+use url::Url;
+
+static WIKI_BASE_URL: &str = "https://wiki.bloodontheclocktower.com";
 
 #[derive(Copy, Clone, Eq, PartialEq, Hash)]
 enum PageType {
@@ -144,7 +147,15 @@ fn generate_cover_page(
 }
 fn generate_character_page(c: &ScriptCharacter) -> ContentPage {
     let color = team_colour(c.team, false);
-    let title = c.name.mc().color(color).underlined();
+    let mut title = c.name.mc().color(color).underlined();
+
+    if c.official {
+        let mut url = Url::parse(WIKI_BASE_URL).expect("wiki base url should be valid");
+        // Uses the full name of the char, not the id
+        url.path_segments_mut().unwrap().push(&c.name);
+        title = title.open_url(&url);
+    }
+
     let content = vec![
         "".mc(),
         "      ".mc(),

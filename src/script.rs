@@ -178,8 +178,12 @@ pub struct ScriptCharacter {
     /// Jinxes with other characters on this script
     #[serde(default)]
     pub jinxes: Vec<CharacterJinx>,
-    #[serde(skip, default)]
+    #[serde(skip)]
     pub special: (),
+    /// If the character is specified in json with just the official ID
+    /// Not part of the json schema
+    #[serde(skip)]
+    pub official: bool,
 }
 
 #[allow(non_camel_case_types)]
@@ -350,6 +354,7 @@ mod test {
                 setup: false,
                 jinxes: vec![],
                 special: (),
+                official: false,
             }],
             meta: Meta::default(),
         };

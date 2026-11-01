@@ -49,6 +49,8 @@ static ROLES: LazyLock<HashMap<String, ScriptCharacter>> = LazyLock::new(|| {
         role.otherNight = other_nights as u64 as f64;
         role.jinxes = jinxes;
 
+        role.official = true;
+
         roles_map.insert(role.id.clone(), role);
     }
 
