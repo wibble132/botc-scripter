@@ -115,10 +115,12 @@ pub fn generate_script_book(
     let lore = lore.cmd();
 
     // Ensure text is escaped
-    let title = format!("{script_name} Roles").mc().cmd();
+    // let title = format!("{script_name} Roles").mc().cmd();
 
+    // Note: `title` is overridden by the custom name
+    // And `title` has a 32-character limit so can't be used directly
     format!(
-        "give @s written_book[written_book_content={{pages:[{pages_str}],title:{title},author:\"\"}},custom_name={book_name},lore={lore}]"
+        "give @s written_book[written_book_content={{pages:[{pages_str}],title:\"\",author:\"\"}},custom_name={book_name},lore={lore}]"
     )
 }
 fn generate_cover_page(

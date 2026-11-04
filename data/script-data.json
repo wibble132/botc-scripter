@@ -136,6 +136,10 @@
     "colour": "dark_green"
   },
   {
+    "id": "hhs",
+    "colour": "dark_red"
+  },
+  {
     "id": "hs",
     "colour": "gray"
   },
