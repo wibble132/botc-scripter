@@ -8,6 +8,7 @@ mod script_data;
 
 use crate::args::Args;
 use crate::book::generate_script_book;
+use crate::fetch_json::get_text_from_url;
 use crate::minecraft_text::{TextColour, ToMcText};
 use crate::script::{CharacterTeam, Script, ScriptCharacter};
 use crate::script_data::{CharacterItem, ScriptData};
@@ -19,7 +20,6 @@ use std::path::Path;
 use std::process::exit;
 use std::thread::sleep;
 use std::time::Duration;
-use crate::fetch_json::get_text_from_url;
 
 fn main() {
     println!("Note: This project is unaffiliated with The Pandemonium Institute.");
@@ -58,7 +58,12 @@ fn main() {
 }
 
 fn create_script_functions(script_id: &str, args: &Args) {
-    let Some(data) = script_data::lookup_data(script_id) else {
+    let args_data = args.script_data.as_deref().map(ScriptData::from_json);
+    let data = args_data
+        .as_ref()
+        .or_else(|| script_data::lookup_data(script_id));
+
+    let Some(data) = data else {
         eprintln!(
             "Could not find data for script {script_id}. Add this script to script-data.json."
         );
@@ -128,10 +133,7 @@ fn inputs(script_id: &str, args: &Args, data: &ScriptData) -> (Version, Script) 
 
         script = script_from_json(&json);
     } else {
-        let (web_version, web_script) = read_from_web(
-            script_id,
-            args.version.as_deref(),
-        );
+        let (web_version, web_script) = read_from_web(script_id, args.version.as_deref());
         script = web_script;
         version = Some(web_version);
     }

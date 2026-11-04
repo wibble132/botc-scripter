@@ -27,6 +27,14 @@ pub struct Args {
     /// Defaults to `./out`.
     #[arg(alias = "out", short, long)]
     pub output_dir: Option<PathBuf>,
+
+    /// Raw json extra script data.
+    /// Can accept `colour` and `items` fields.
+    ///
+    /// `colour` is a minecraft colour name or a hex colour code.
+    /// `items` is a list of item overrides, each of: `{ "id": "the id of the role", "item": "the item id", "components": "(Optional) extra components for the item" }`
+    #[arg(long)]
+    pub script_data: Option<String>,
 }
 
 impl Args {

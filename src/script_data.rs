@@ -6,6 +6,7 @@ use std::collections::HashMap;
 use std::fmt::Formatter;
 use std::hash::Hash;
 use std::path::PathBuf;
+use std::process::exit;
 use std::sync::LazyLock;
 
 #[derive(Clone)]
@@ -17,6 +18,40 @@ pub struct ScriptData {
     pub script_path: Option<PathBuf>,
     pub version: Option<String>,
 }
+impl ScriptData {
+    pub fn from_json(json: &str) -> Self {
+        let parsed = match serde_json::from_str::<ScriptDataJson>(json) {
+            Ok(x) => x,
+            Err(e) => {
+                eprintln!("Failed to parse ScriptData from json");
+                eprintln!("{e}");
+                exit(1);
+            }
+        };
+
+        Self::from_parsed_json(parsed)
+    }
+
+    fn from_parsed_json(d: ScriptDataJson) -> Self {
+        ScriptData {
+            colour: d.colour,
+            items: items_to_map(d.items, |d: ScriptItemJson| {
+                (
+                    d.character_id,
+                    CharacterItem {
+                        item_id: d.item_id,
+                        components: d.components,
+                    },
+                )
+            }),
+            script: d.script,
+            script_url: d.script_url,
+            script_path: d.script_path,
+            version: d.version,
+        }
+    }
+}
+
 #[derive(Clone)]
 pub struct CharacterItem {
     pub item_id: Option<String>,
@@ -40,25 +75,7 @@ static SCRIPT_DATA: LazyLock<HashMap<String, ScriptData>> = LazyLock::new(|| {
                 .expect("Failed to parse script data")
         }
         _ => {{
-            use std::path::Path;
-            use std::process::exit;
-
-            let data_path = Path::new("./data/script-data.json");
-            let Ok(data_json) = std::fs::read_to_string(data_path) else {
-                eprintln!("Failed to read script data from {}", data_path.display());
-                exit(1);
-            };
-            match serde_json::from_str(&data_json) {
-                Ok(data) => data,
-                Err(err) => {
-                    eprintln!(
-                        "Failed to parse json script data from {}",
-                        data_path.display()
-                    );
-                    eprintln!("{err}");
-                    exit(1);
-                }
-            }
+            deserialize_file()
         }}
     };
 
@@ -69,27 +86,37 @@ static SCRIPT_DATA: LazyLock<HashMap<String, ScriptData>> = LazyLock::new(|| {
     };
 
     items_to_map(data, |d: ScriptDataJson| {
-        (
-            d.script_id,
-            ScriptData {
-                colour: d.colour,
-                items: items_to_map(d.items, |d: ScriptItemJson| {
-                    (
-                        d.character_id,
-                        CharacterItem {
-                            item_id: d.item_id,
-                            components: d.components,
-                        },
-                    )
-                }),
-                script: d.script,
-                script_url: d.script_url,
-                script_path: d.script_path,
-                version: d.version,
-            },
-        )
+        assert!(!d.script_id.is_empty(), "Missing script id in script data");
+
+        (d.script_id.clone(), ScriptData::from_parsed_json(d))
     })
 });
+
+#[cfg(not(any(feature = "static-data", test)))]
+fn deserialize_file<T>() -> T
+where
+    T: for<'a> Deserialize<'a>,
+{
+    use std::path::Path;
+    use std::process::exit;
+
+    let data_path = Path::new("./data/script-data.json");
+    let Ok(data_json) = std::fs::read_to_string(data_path) else {
+        eprintln!("Failed to read script data from {}", data_path.display());
+        exit(1);
+    };
+    match serde_json::from_str(&data_json) {
+        Ok(data) => data,
+        Err(err) => {
+            eprintln!(
+                "Failed to parse json script data from {}",
+                data_path.display()
+            );
+            eprintln!("{err}");
+            exit(1);
+        }
+    }
+}
 
 fn items_to_map<T, K, V, F>(is: Vec<T>, f: F) -> HashMap<K, V>
 where
@@ -101,7 +128,7 @@ where
 
 #[derive(Deserialize)]
 pub struct ScriptDataJson {
-    #[serde(alias = "id")]
+    #[serde(default, alias = "id")]
     script_id: String,
     colour: TextColour,
     #[serde(default)]
