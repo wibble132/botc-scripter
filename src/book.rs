@@ -6,6 +6,7 @@ use std::collections::HashMap;
 use url::Url;
 
 static WIKI_BASE_URL: &str = "https://wiki.bloodontheclocktower.com";
+static SCRIPTS_BASE_URL: &str = "https://scripts.botc.ink/script";
 
 #[derive(Copy, Clone, Eq, PartialEq, Hash)]
 enum PageType {
@@ -38,13 +39,14 @@ struct ContentPage {
 }
 
 pub fn generate_script_book(
+    script_id: &str,
     script_color: TextColour,
     script: &Script,
     script_version: &Version,
 ) -> String {
     let script_name = &script.meta.name;
 
-    let cover = generate_cover_page(script_name, script_color, script_version);
+    let cover = generate_cover_page(script_name, script_id, script_color, script_version);
 
     let character_pages = script
         .characters
@@ -125,9 +127,14 @@ pub fn generate_script_book(
 }
 fn generate_cover_page(
     script_name: &str,
+    script_id: &str,
     script_color: TextColour,
     script_version: &Version,
 ) -> MinecraftText {
+
+    let mut link = Url::parse(SCRIPTS_BASE_URL).expect("scripts url should be valid");
+    link.path_segments_mut().unwrap().push(script_id).push(&script_version.0);
+
     vec![
         "".mc(),
         "\n\n   BLOOD ON THE\n    CLOCKTOWER".mc().bold(),
@@ -135,7 +142,8 @@ fn generate_cover_page(
         format!(r#"  "{script_name}""#)
             .mc()
             .italic()
-            .color(script_color),
+            .color(script_color)
+            .open_url(&link),
         "\n".mc(),
         "ROLE CHEAT SHEET".mc().bold(),
         "\n".mc(),

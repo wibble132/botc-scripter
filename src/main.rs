@@ -87,7 +87,7 @@ fn create_script_functions(script_id: &str, args: &Args) {
         );
     }
 
-    let script_book = generate_script_book(script_colour, &script, &version);
+    let script_book = generate_script_book(script_id, script_colour, &script, &version);
 
     if let Err(e) = args.output_script_file().write_all(script_book.as_bytes()) {
         eprintln!("Error while writing script command: {e}");
