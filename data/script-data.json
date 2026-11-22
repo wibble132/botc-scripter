@@ -28,7 +28,10 @@
     "id": "ak",
     "colour": "dark_gray",
     "items": [
-      { "id":  "hermit", "item": null }
+      {
+        "id": "hermit",
+        "item": null
+      }
     ]
   },
   {
@@ -43,7 +46,10 @@
         "id": "lilmonsta",
         "item": "piglin_head"
       },
-      { "id":  "hermit", "item": null }
+      {
+        "id": "hermit",
+        "item": null
+      }
     ]
   },
   {
@@ -63,11 +69,11 @@
     "colour": "gold"
   },
   {
-    "id": "cac",
+    "id": "ca",
     "colour": "dark_red"
   },
   {
-    "id": "ca",
+    "id": "cac",
     "colour": "dark_red"
   },
   {
@@ -90,7 +96,10 @@
     "id": "dj",
     "colour": "gold",
     "items": [
-      { "id":  "hermit", "item": null }
+      {
+        "id": "hermit",
+        "item": null
+      }
     ]
   },
   {
@@ -103,10 +112,22 @@
     "script_url": "https://www.graypockets.com/scripts/Delirium_Promenade/json/Delirium_Promenade.json",
     "version": "7.1.0",
     "items": [
-      { "id": "lunatic_dp", "item": null },
-      { "id": "drunk_dp", "item": null },
-      { "id": "hooligan", "item": null },
-      { "id":  "marionette_dp", "item":  null }
+      {
+        "id": "lunatic_dp",
+        "item": null
+      },
+      {
+        "id": "drunk_dp",
+        "item": null
+      },
+      {
+        "id": "hooligan",
+        "item": null
+      },
+      {
+        "id": "marionette_dp",
+        "item": null
+      }
     ]
   },
   {
@@ -145,6 +166,10 @@
   {
     "id": "gm",
     "colour": "dark_red"
+  },
+  {
+    "id": "gs",
+    "colour": "dark_gray"
   },
   {
     "id": "h108",
@@ -253,12 +278,12 @@
     "colour": "dark_blue"
   },
   {
-    "id": "rdd",
-    "colour": "green"
-  },
-  {
     "id": "rd",
     "colour": "dark_purple"
+  },
+  {
+    "id": "rdd",
+    "colour": "green"
   },
   {
     "id": "rgh",
@@ -294,7 +319,10 @@
     "id": "stm",
     "colour": "dark_blue",
     "items": [
-      { "id":  "hermit", "item": null },
+      {
+        "id": "hermit",
+        "item": null
+      },
       {
         "id": "lilmonsta",
         "item": "player_head",
