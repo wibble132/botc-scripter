@@ -26,7 +26,10 @@
   },
   {
     "id": "ak",
-    "colour": "dark_gray"
+    "colour": "dark_gray",
+    "items": [
+      { "id":  "hermit", "item": null }
+    ]
   },
   {
     "id": "amab",
@@ -39,7 +42,8 @@
       {
         "id": "lilmonsta",
         "item": "piglin_head"
-      }
+      },
+      { "id":  "hermit", "item": null }
     ]
   },
   {
@@ -84,11 +88,26 @@
   },
   {
     "id": "dj",
-    "colour": "gold"
+    "colour": "gold",
+    "items": [
+      { "id":  "hermit", "item": null }
+    ]
   },
   {
     "id": "dmr",
     "colour": "#874307"
+  },
+  {
+    "id": "dp",
+    "colour": "#d428c0",
+    "script_url": "https://www.graypockets.com/scripts/Delirium_Promenade/json/Delirium_Promenade.json",
+    "version": "7.1.0",
+    "items": [
+      { "id": "lunatic_dp", "item": null },
+      { "id": "drunk_dp", "item": null },
+      { "id": "hooligan", "item": null },
+      { "id":  "marionette_dp", "item":  null }
+    ]
   },
   {
     "id": "dyd",
@@ -260,6 +279,10 @@
     ]
   },
   {
+    "id": "sp",
+    "colour": "dark_red"
+  },
+  {
     "id": "sr",
     "colour": "gold"
   },
@@ -271,6 +294,7 @@
     "id": "stm",
     "colour": "dark_blue",
     "items": [
+      { "id":  "hermit", "item": null },
       {
         "id": "lilmonsta",
         "item": "player_head",
@@ -291,14 +315,12 @@
     "colour": "dark_red"
   },
   {
-    "id": "test",
-    "colour": "black",
-    "script_path": "out/test.json",
-    "version": "0.0.1"
-  },
-  {
     "id": "tmt",
     "colour": "blue"
+  },
+  {
+    "id": "tnc",
+    "colour": "#35a17b"
   },
   {
     "id": "tnst",

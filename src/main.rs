@@ -30,30 +30,43 @@ fn main() {
     let script_id = &args.name;
 
     if script_id == "all" {
-        println!("RUNNING FOR ALL {} SCRIPTS", script_data::script_count());
-        sleep(Duration::from_secs(1));
-
-        // Run all online scripts
-        for script_name in script_data::all_script_keys() {
-            let script_args = Args {
-                name: script_name.to_string(),
-                ..args.clone()
-            };
-
-            let mut script_dir = script_args.base_dir();
-            script_dir.push("script");
-            script_dir.push(format!("{}.mcfunction", script_args.name));
-            if script_dir.exists() {
-                println!("Skipping script {script_name}");
-                continue;
-            }
-
-            println!("Running script {script_name}");
-            create_script_functions(script_name, &script_args);
-            println!();
-        }
+        create_all_scripts(&args);
     } else {
         create_script_functions(script_id, &args);
+    }
+}
+
+fn create_all_scripts(args: &Args) {
+    println!("RUNNING FOR ALL {} SCRIPTS", script_data::script_count());
+    sleep(Duration::from_secs(1));
+
+    // Run all scripts in the data
+    for script_name in script_data::all_script_keys() {
+        let script_args = Args {
+            name: script_name.to_string(),
+            ..args.clone()
+        };
+
+        let mut script_dir = script_args.base_dir();
+        script_dir.push("script");
+        script_dir.push(format!("{}.mcfunction", script_args.name));
+        if script_dir.exists() {
+            println!("Skipping script {script_name}");
+            continue;
+        }
+
+        println!("Running script {script_name}");
+        create_script_functions(script_name, &script_args);
+        println!();
+    }
+
+    let Ok(online_scripts) = fetch_json::OnlineScriptData::load_script_list() else {
+        return;
+    };
+    for id in online_scripts.script_ids() {
+        if script_data::all_script_keys().all(|k| k != id) {
+            eprintln!("Script with id \"{id}\" is online without local data.");
+        }
     }
 }
 
@@ -92,6 +105,19 @@ fn create_script_functions(script_id: &str, args: &Args) {
     if let Err(e) = args.output_script_file().write_all(script_book.as_bytes()) {
         eprintln!("Error while writing script command: {e}");
         exit(1);
+    }
+
+    for id in item_overrides.keys() {
+        if script.characters.iter().all(|c| &c.id != id) {
+            eprintln!("Warning: Item override for role id \"{id}\" not found on the script.");
+            let all_chars = script
+                .characters
+                .iter()
+                .map(|c| c.id.clone())
+                .collect::<Vec<_>>()
+                .join(", ");
+            eprintln!("  Current roles ids on the script are {all_chars}");
+        }
     }
 
     let role_papers = generate_role_papers(&script, item_overrides);

@@ -87,7 +87,9 @@ impl OnlineScriptData {
 
         CACHED_DATA.as_ref()
     }
-
+    pub fn script_ids(&self) -> impl Iterator<Item = &str> {
+        self.scripts.iter().map(|s| s.slug.as_deref().unwrap())
+    }
     fn find_script(&self, script_id: &str) -> Result<&OnlineScript, FetchError> {
         self.scripts
             .iter()

@@ -54,6 +54,7 @@ impl ScriptData {
 
 #[derive(Clone)]
 pub struct CharacterItem {
+    // "None" means don't include an item
     pub item_id: Option<String>,
     pub components: String,
 }
