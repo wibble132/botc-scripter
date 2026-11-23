@@ -44,6 +44,7 @@
         mkShell {
           buildInputs = [
             rust
+            jq
           ];
 
           RUST_SRC_PATH = "${rust}/lib/rustlib/src/rust/library";

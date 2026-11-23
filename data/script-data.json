@@ -196,6 +196,10 @@
     "colour": "blue"
   },
   {
+    "id": "ild",
+    "colour": "black"
+  },
+  {
     "id": "ld",
     "colour": "blue"
   },
@@ -288,6 +292,10 @@
   {
     "id": "rgh",
     "colour": "gray"
+  },
+  {
+    "id": "sc",
+    "colour": "gold"
   },
   {
     "id": "sha",
