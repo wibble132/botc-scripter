@@ -228,6 +228,10 @@
     "colour": "dark_purple"
   },
   {
+    "id": "mim",
+    "colour": "#755c3c"
+  },
+  {
     "id": "mm",
     "colour": "dark_green",
     "items": [
